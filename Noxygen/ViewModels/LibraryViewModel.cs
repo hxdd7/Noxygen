@@ -62,12 +62,19 @@ public partial class LibraryViewModel : ObservableObject
     {
         if (DetectedGames.Count > 0) return;
 
-        var cachedGames = await _dataService.LoadGamesAsync();
+        try
+        {
+            var cachedGames = await _dataService.LoadGamesAsync() ?? new List<Game>();
 
-        _masterGameList.Clear();
-        _masterGameList.AddRange(cachedGames);
+            _masterGameList.Clear();
+            _masterGameList.AddRange(cachedGames.Where(g => g != null));
 
-        ApplySorting();
+            ApplySorting();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error initializing library: {ex.Message}");
+        }
     }
 
     [RelayCommand]
@@ -161,50 +168,95 @@ public partial class LibraryViewModel : ObservableObject
         if (IsScanning) return;
         IsScanning = true;
 
-        // 1. Load existing games from cache
-        var existingGames = await _dataService.LoadGamesAsync();
-
-        // 2. Map existing games by Title + Launcher
-        var existingMap = new Dictionary<string, Game>(StringComparer.OrdinalIgnoreCase);
-        foreach (var game in existingGames)
+        try
         {
-            string key = $"{game.Title}_{game.Launcher}";
-            if (!existingMap.ContainsKey(key))
+            // 1. Load existing games from cache with null fallback
+            var existingGames = await _dataService.LoadGamesAsync() ?? new List<Game>();
+
+            // 2. Map existing games by Title + Launcher safely
+            var existingMap = new Dictionary<string, Game>(StringComparer.OrdinalIgnoreCase);
+            foreach (var game in existingGames)
             {
-                existingMap[key] = game;
+                if (game == null || string.IsNullOrWhiteSpace(game.Title)) continue;
+
+                string key = $"{game.Title}_{game.Launcher}";
+                if (!existingMap.ContainsKey(key))
+                {
+                    existingMap[key] = game;
+                }
+            }
+
+            // 3. Perform local scanner execution with safely handled errors
+            var scannedGames = await Task.Run(() =>
+            {
+                try
+                {
+                    return _scanner.ScanAll() ?? new List<Game>();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Local Scan Error: {ex.Message}");
+                    return new List<Game>();
+                }
+            });
+
+            var finalGameList = new List<Game>();
+
+            foreach (var scannedGame in scannedGames)
+            {
+                if (scannedGame == null || string.IsNullOrWhiteSpace(scannedGame.Title)) continue;
+
+                string key = $"{scannedGame.Title}_{scannedGame.Launcher}";
+
+                Game targetGame = existingMap.TryGetValue(key, out var existing) ? existing : scannedGame;
+
+                // Safely fetch metadata without breaking scanner execution on network/API failure
+                try
+                {
+                    await _metadataService.FetchMetadataForGameAsync(targetGame);
+                }
+                catch (Exception metaEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Metadata Fetch Error for {targetGame.Title}: {metaEx.Message}");
+                }
+
+                finalGameList.Add(targetGame);
+                existingMap.Remove(key);
+            }
+
+            // 4. Preserve custom games
+            finalGameList.AddRange(existingMap.Values.Where(g => g != null));
+
+            // 5. Download 2:3 vertical images, overwrite old disk files, and save JSON
+            await _dataService.SaveGamesAsync(finalGameList);
+
+            // 6. Update master list & active view collection with active sort applied
+            _masterGameList.Clear();
+            _masterGameList.AddRange(finalGameList);
+
+            ApplySorting();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Unhandled exception caught in ScanForGamesAsync: {ex}");
+
+            if (App.MainWindow?.Content is FrameworkElement root)
+            {
+                var errorDialog = new ContentDialog
+                {
+                    Title = "Scan Issue Encountered",
+                    Content = $"The library scanner encountered an error while indexing your drives:\n{ex.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = root.XamlRoot
+                };
+                await errorDialog.ShowAsync();
             }
         }
-
-        // 3. Perform local scanner execution
-        var scannedGames = await Task.Run(() => _scanner.ScanAll());
-        var finalGameList = new List<Game>();
-
-        foreach (var scannedGame in scannedGames)
+        finally
         {
-            string key = $"{scannedGame.Title}_{scannedGame.Launcher}";
-
-            Game targetGame = existingMap.TryGetValue(key, out var existing) ? existing : scannedGame;
-
-            // Force fetch 2:3 vertical cover art
-            await _metadataService.FetchMetadataForGameAsync(targetGame);
-
-            finalGameList.Add(targetGame);
-            existingMap.Remove(key);
+            // ALWAYS reset progress spinner to unblock the UI
+            IsScanning = false;
         }
-
-        // 4. Preserve custom games
-        finalGameList.AddRange(existingMap.Values);
-
-        // 5. Download 2:3 vertical images, overwrite old disk files, and save JSON
-        await _dataService.SaveGamesAsync(finalGameList);
-
-        // 6. Update master list & active view collection with active sort applied
-        _masterGameList.Clear();
-        _masterGameList.AddRange(finalGameList);
-
-        ApplySorting();
-
-        IsScanning = false;
     }
 
     private void ApplySorting()
@@ -215,14 +267,16 @@ public partial class LibraryViewModel : ObservableObject
             return;
         }
 
+        var validGames = _masterGameList.Where(g => g != null);
+
         IEnumerable<Game> sorted = SelectedSortOption switch
         {
-            GameSortOption.TitleAscending => _masterGameList.OrderBy(g => g.Title),
-            GameSortOption.TitleDescending => _masterGameList.OrderByDescending(g => g.Title),
-            GameSortOption.SizeDescending => _masterGameList.OrderByDescending(g => g.InstalledSizeGb),
-            GameSortOption.SizeAscending => _masterGameList.OrderBy(g => g.InstalledSizeGb),
-            GameSortOption.Launcher => _masterGameList.OrderBy(g => g.Launcher).ThenBy(g => g.Title),
-            _ => _masterGameList
+            GameSortOption.TitleAscending => validGames.OrderBy(g => g.Title ?? string.Empty),
+            GameSortOption.TitleDescending => validGames.OrderByDescending(g => g.Title ?? string.Empty),
+            GameSortOption.SizeDescending => validGames.OrderByDescending(g => g.InstalledSizeGb),
+            GameSortOption.SizeAscending => validGames.OrderBy(g => g.InstalledSizeGb),
+            GameSortOption.Launcher => validGames.OrderBy(g => g.Launcher ?? string.Empty).ThenBy(g => g.Title ?? string.Empty),
+            _ => validGames
         };
 
         DetectedGames.Clear();
@@ -234,7 +288,7 @@ public partial class LibraryViewModel : ObservableObject
 
     private async Task SaveAndSyncCacheAsync()
     {
-        await _dataService.SaveGamesAsync(_masterGameList);
+        await _dataService.SaveGamesAsync(_masterGameList.Where(g => g != null).ToList());
 
         if (App.MainWindow is MainWindow mainWin)
         {
@@ -244,6 +298,8 @@ public partial class LibraryViewModel : ObservableObject
 
     private double CalculateDirectorySizeGb(string path)
     {
+        if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path)) return 0.0;
+
         try
         {
             var dirInfo = new DirectoryInfo(path);
@@ -252,13 +308,15 @@ public partial class LibraryViewModel : ObservableObject
             {
                 IgnoreInaccessible = true,
                 RecurseSubdirectories = true,
-                // Fully specify System.IO.FileAttributes to resolve namespace ambiguity
                 AttributesToSkip = System.IO.FileAttributes.ReparsePoint | System.IO.FileAttributes.System
             };
 
             foreach (var file in dirInfo.EnumerateFiles("*", options))
             {
-                totalBytes += file.Length;
+                if (file != null)
+                {
+                    totalBytes += file.Length;
+                }
             }
 
             return Math.Round(totalBytes / (1024.0 * 1024.0 * 1024.0), 2);

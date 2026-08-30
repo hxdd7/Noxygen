@@ -13,32 +13,42 @@ public class SteamMetadataService
 
     public async Task FetchMetadataForGameAsync(Game game)
     {
+        if (game == null) return;
+
         try
         {
             string? steamAppId = null;
 
-            if (game.Launcher.Equals("Steam", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(game.ExecutablePath))
+            // 1. Check if valid numeric SteamId exists on the model
+            if (!string.IsNullOrWhiteSpace(game.SteamId) && long.TryParse(game.SteamId, out _))
             {
-                steamAppId = game.ExecutablePath;
+                steamAppId = game.SteamId.Trim();
             }
+            // 2. Fallback to API title search if SteamId is missing or invalid
             else
             {
                 steamAppId = await SearchSteamAppIdByTitleAsync(game.Title);
+                if (!string.IsNullOrEmpty(steamAppId))
+                {
+                    game.SteamId = steamAppId;
+                }
             }
 
             if (string.IsNullOrEmpty(steamAppId)) return;
 
-            // Force 2:3 Vertical Cover (Library Capsule: 600x900)
+            // Apply valid vertical cover URL (600x900)
             game.CoverArtUrl = $"https://cdn.cloudflare.steamstatic.com/steam/apps/{steamAppId}/library_600x900.jpg";
 
-            // Fetch Background and Company details
+            // Query Steam API for metadata details
             string url = $"https://store.steampowered.com/api/appdetails?appids={steamAppId}";
             string json = await _httpClient.GetStringAsync(url);
 
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
-            if (root.TryGetProperty(steamAppId, out var appData) && appData.GetProperty("success").GetBoolean())
+            if (root.TryGetProperty(steamAppId, out var appData) &&
+                appData.TryGetProperty("success", out var success) &&
+                success.GetBoolean())
             {
                 var data = appData.GetProperty("data");
 
@@ -55,12 +65,14 @@ public class SteamMetadataService
         }
         catch
         {
-            // Fallback silently
+            // Fallback silently on network or parse failure
         }
     }
 
     private async Task<string?> SearchSteamAppIdByTitleAsync(string title)
     {
+        if (string.IsNullOrWhiteSpace(title)) return null;
+
         try
         {
             string searchUrl = $"https://store.steampowered.com/api/storesearch/?term={HttpUtility.UrlEncode(title)}&l=english&cc=US";

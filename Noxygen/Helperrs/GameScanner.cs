@@ -18,9 +18,9 @@ public class GameScanner
 
         Debug.WriteLine("---> [SCANNER START]");
 
-        try { games.AddRange(ScanSteamGames()); } catch { }
-        try { games.AddRange(ScanEpicGames()); } catch { }
-        try { games.AddRange(ScanGogGames()); } catch { }
+        try { games.AddRange(ScanSteamGames()); } catch (Exception ex) { Debug.WriteLine($"Steam Scan Failure: {ex.Message}"); }
+        try { games.AddRange(ScanEpicGames()); } catch (Exception ex) { Debug.WriteLine($"Epic Scan Failure: {ex.Message}"); }
+        try { games.AddRange(ScanGogGames()); } catch (Exception ex) { Debug.WriteLine($"GOG Scan Failure: {ex.Message}"); }
 
         // Deduplicate by title across all launchers to keep the list clean
         var uniqueGames = games
@@ -75,14 +75,26 @@ public class GameScanner
                 try
                 {
                     var content = File.ReadAllText(manifestFile);
+
                     var nameMatch = Regex.Match(content, @"""name""\s+""([^""]+)""");
                     var dirMatch = Regex.Match(content, @"""installdir""\s+""([^""]+)""");
+
+                    // Extract numeric AppId from manifest content
+                    var appIdMatch = Regex.Match(content, @"""appid""\s+""?(\d+)""?");
+                    string appId = appIdMatch.Success ? appIdMatch.Groups[1].Value.Trim() : string.Empty;
+
+                    // Fallback to filename extraction (e.g. appmanifest_945360.acf) if missing
+                    if (string.IsNullOrEmpty(appId) || !long.TryParse(appId, out _))
+                    {
+                        var fileMatch = Regex.Match(Path.GetFileName(manifestFile), @"appmanifest_(\d+)\.acf");
+                        if (fileMatch.Success) appId = fileMatch.Groups[1].Value;
+                    }
 
                     if (nameMatch.Success && dirMatch.Success)
                     {
                         string title = nameMatch.Groups[1].Value;
 
-                        // 1. Filter out non-game software, tools, and dedicated servers
+                        // Filter non-game software
                         if (title.StartsWith("Steamworks") ||
                             title.StartsWith("Proton") ||
                             title.EndsWith("Server") ||
@@ -93,14 +105,25 @@ public class GameScanner
                         string folderName = dirMatch.Groups[1].Value;
                         string fullPath = Path.Combine(libPath, "common", folderName);
 
-                        // 2. Prevent adding duplicate games with identical titles
+                        if (!Directory.Exists(fullPath)) continue;
+
                         if (games.Exists(g => g.Title.Equals(title, StringComparison.OrdinalIgnoreCase)))
                             continue;
+
+                        string exePath = FindPrimaryExecutable(fullPath, title);
+
+                        // Direct fallback CDN cover
+                        string coverUrl = !string.IsNullOrEmpty(appId)
+                            ? $"https://cdn.cloudflare.steamstatic.com/steam/apps/{appId}/library_600x900.jpg"
+                            : string.Empty;
 
                         games.Add(new Game
                         {
                             Title = title,
+                            SteamId = appId,
                             InstallPath = fullPath,
+                            ExecutablePath = exePath,
+                            CoverArtUrl = coverUrl,
                             InstalledSizeGb = CalculateDirectorySizeGb(fullPath),
                             Launcher = "Steam"
                         });
@@ -133,15 +156,23 @@ public class GameScanner
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
 
-                string title = root.GetProperty("DisplayName").GetString() ?? "";
-                string installPath = root.GetProperty("InstallLocation").GetString() ?? "";
+                string title = root.TryGetProperty("DisplayName", out var nameProp) ? nameProp.GetString() ?? "" : "";
+                string installPath = root.TryGetProperty("InstallLocation", out var pathProp) ? pathProp.GetString() ?? "" : "";
+                string launchExe = root.TryGetProperty("LaunchExecutable", out var exeProp) ? exeProp.GetString() ?? "" : "";
 
                 if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
                 {
+                    string fullExePath = !string.IsNullOrEmpty(launchExe) ? Path.Combine(installPath, launchExe) : string.Empty;
+                    if (string.IsNullOrEmpty(fullExePath) || !File.Exists(fullExePath))
+                    {
+                        fullExePath = FindPrimaryExecutable(installPath, title);
+                    }
+
                     games.Add(new Game
                     {
                         Title = title,
                         InstallPath = installPath,
+                        ExecutablePath = fullExePath,
                         InstalledSizeGb = CalculateDirectorySizeGb(installPath),
                         Launcher = "Epic Games"
                     });
@@ -174,13 +205,21 @@ public class GameScanner
 
                 string title = gameKey.GetValue("gameName") as string ?? "";
                 string path = gameKey.GetValue("path") as string ?? "";
+                string exeName = gameKey.GetValue("exe") as string ?? "";
 
                 if (!string.IsNullOrEmpty(title) && Directory.Exists(path))
                 {
+                    string fullExePath = !string.IsNullOrEmpty(exeName) ? Path.Combine(path, exeName) : string.Empty;
+                    if (string.IsNullOrEmpty(fullExePath) || !File.Exists(fullExePath))
+                    {
+                        fullExePath = FindPrimaryExecutable(path, title);
+                    }
+
                     games.Add(new Game
                     {
                         Title = title,
                         InstallPath = path,
+                        ExecutablePath = fullExePath,
                         InstalledSizeGb = CalculateDirectorySizeGb(path),
                         Launcher = "GOG Galaxy"
                     });
@@ -196,7 +235,53 @@ public class GameScanner
     }
     #endregion
 
-    #region Safe Directory Calculation
+    #region Executable Resolution & Directory Helper
+    public static string FindPrimaryExecutable(string folderPath, string title)
+    {
+        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+            return string.Empty;
+
+        try
+        {
+            var options = new EnumerationOptions
+            {
+                IgnoreInaccessible = true,
+                RecurseSubdirectories = true,
+                AttributesToSkip = FileAttributes.ReparsePoint | FileAttributes.System
+            };
+
+            var files = new DirectoryInfo(folderPath).EnumerateFiles("*.exe", options)
+                .Select(f => f.FullName)
+                .ToList();
+
+            if (!files.Any()) return string.Empty;
+
+            var filtered = files.Where(f =>
+            {
+                string name = Path.GetFileName(f).ToLowerInvariant();
+                return !name.Contains("unins") &&
+                       !name.Contains("setup") &&
+                       !name.Contains("crash") &&
+                       !name.Contains("unityweb") &&
+                       !name.Contains("redist") &&
+                       !name.Contains("dxsetup");
+            }).ToList();
+
+            if (!filtered.Any()) filtered = files;
+
+            string sanitizedTitle = new string(title.Where(char.IsLetterOrDigit).ToArray());
+            var bestMatch = filtered.FirstOrDefault(f => Path.GetFileNameWithoutExtension(f)
+                .Replace(" ", "")
+                .Equals(sanitizedTitle, StringComparison.OrdinalIgnoreCase));
+
+            return bestMatch ?? filtered.FirstOrDefault() ?? string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
     private double CalculateDirectorySizeGb(string path)
     {
         if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path))
