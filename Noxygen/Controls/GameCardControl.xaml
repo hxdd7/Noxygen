@@ -1,0 +1,45 @@
+<UserControl
+    x:Class="Noxygen.Controls.GameCardControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid 
+        Width="220" 
+        Height="130" 
+        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
+        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+        BorderThickness="1"
+        CornerRadius="8" 
+        Padding="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock 
+            Grid.Row="0" 
+            Text="{x:Bind GameTitle, Mode=OneWay}" 
+            Style="{StaticResource SubtitleTextBlockStyle}" 
+            TextWrapping="Wrap" 
+            MaxLines="2" />
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
+            <FontIcon Glyph="&#xE8B9;" FontSize="12" Foreground="{ThemeResource TextFillSecondaryBrush}" />
+            <TextBlock 
+                Text="{x:Bind LauncherName, Mode=OneWay}" 
+                Style="{StaticResource CaptionTextBlockStyle}" 
+                Foreground="{ThemeResource TextFillSecondaryBrush}" />
+        </StackPanel>
+
+        <TextBlock 
+            Grid.Row="2" 
+            Text="{x:Bind SizeFormatted, Mode=OneWay}" 
+            Style="{StaticResource CaptionTextBlockStyle}" 
+            Foreground="{ThemeResource TextFillTertiaryBrush}" 
+            Margin="0,2,0,0" />
+    </Grid>
+</UserControl>

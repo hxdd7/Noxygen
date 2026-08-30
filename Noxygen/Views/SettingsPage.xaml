@@ -1,0 +1,84 @@
+<Page
+    x:Class="Noxygen.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:labs="using:CommunityToolkit.WinUI.Controls"
+    mc:Ignorable="d">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="36,24,36,24">
+        <StackPanel Spacing="4" HorizontalAlignment="Stretch">
+
+            <!-- Page Title -->
+            <TextBlock Text="Settings" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,24"/>
+
+            <!-- Appearance and behavior Section -->
+            <TextBlock Text="Appearance and behavior" 
+                       Style="{StaticResource BodyStrongTextBlockStyle}" 
+                       Margin="0,0,0,8"/>
+
+            <StackPanel Spacing="4" Margin="0,0,0,24">
+                <!-- App Theme -->
+                <labs:SettingsCard 
+                    Header="App Theme"
+                    Description="Select which app theme to display">
+                    <labs:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE790;" />
+                    </labs:SettingsCard.HeaderIcon>
+
+                    <ComboBox 
+                        SelectedIndex="{x:Bind ViewModel.SelectedThemeIndex, Mode=TwoWay}"
+                        Width="180">
+                        <ComboBoxItem Content="Use system setting"/>
+                        <ComboBoxItem Content="Light"/>
+                        <ComboBoxItem Content="Dark"/>
+                    </ComboBox>
+                </labs:SettingsCard>
+            </StackPanel>
+
+            <!-- About Section -->
+            <TextBlock Text="About" 
+                       Style="{StaticResource BodyStrongTextBlockStyle}" 
+                       Margin="0,0,0,8"/>
+
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    CornerRadius="4"
+                    Padding="14"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    Margin="0,0,0,0">
+                <Grid VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <Grid VerticalAlignment="Center" HorizontalAlignment="Left">
+                            <StackPanel Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="2,0,0,0">
+                                <Border Width="24" Height="24">
+                                    <Image
+                                        Source="ms-appx:///Assets/Noxygen.png"
+                                        Width="24"
+                                        Height="24"
+                                        Stretch="Fill"/>
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="42,0,0,0">
+                                <TextBlock Text="Noxygen" FontSize="14"/>
+                                <TextBlock Text="© 2026 Hexedd7. All rights reserved." FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
+                        <TextBlock Text="1.0.0" FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

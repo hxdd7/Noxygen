@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Noxygen (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Noxygen (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

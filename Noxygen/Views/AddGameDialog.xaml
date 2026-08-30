@@ -1,0 +1,75 @@
+<ContentDialog
+    x:Class="Noxygen.Views.AddGameDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Add New Game"
+    PrimaryButtonText="Add"
+    CloseButtonText="Cancel"
+    DefaultButton="Primary"
+    PrimaryButtonClick="ContentDialog_PrimaryButtonClick"
+    Style="{StaticResource DefaultContentDialogStyle}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="540" Padding="0,0,12,0">
+        <StackPanel Spacing="16" Width="380">
+
+            <!-- 1. Game Name -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Game Name" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                <TextBox x:Name="TitleTextBox" PlaceholderText="Enter game title..."/>
+                <TextBlock x:Name="TitleErrorText" 
+                           Text="Game title is required." 
+                           Foreground="{ThemeResource SystemFillColorCriticalBrush}" 
+                           Style="{StaticResource CaptionTextBlockStyle}" 
+                           Visibility="Collapsed"/>
+            </StackPanel>
+
+            <!-- 2. Company -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Company" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                <TextBox x:Name="CompanyTextBox" PlaceholderText="Developer or Publisher..."/>
+            </StackPanel>
+
+            <!-- 3. Background Image URL -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Background Image URL" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                <TextBox x:Name="BackgroundUrlTextBox" PlaceholderText="https://..."/>
+            </StackPanel>
+
+            <!-- 4. Cover Image URL -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Cover Image URL" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                <TextBox x:Name="CoverArtTextBox" PlaceholderText="https://..."/>
+            </StackPanel>
+
+            <!-- 5. Icon URL -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Icon URL" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                <TextBox x:Name="IconUrlTextBox" PlaceholderText="https://..."/>
+            </StackPanel>
+
+            <!-- 6. Executable Path -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Executable Path" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBox x:Name="ExePathTextBox" 
+                             Grid.Column="0" 
+                             PlaceholderText="C:\Games\Game.exe"
+                             Margin="0,0,8,0"/>
+
+                    <Button Grid.Column="1" 
+                            Content="Browse" 
+                            Click="BrowseExe_Click"/>
+                </Grid>
+                <TextBlock x:Name="ExeErrorText" 
+                           Text="Executable path is required." 
+                           Foreground="{ThemeResource SystemFillColorCriticalBrush}" 
+                           Style="{StaticResource CaptionTextBlockStyle}" 
+                           Visibility="Collapsed"/>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</ContentDialog>

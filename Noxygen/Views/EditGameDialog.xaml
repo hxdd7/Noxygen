@@ -1,0 +1,56 @@
+<ContentDialog
+    x:Class="Noxygen.Views.EditGameDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Edit Game Details"
+    PrimaryButtonText="Save Changes"
+    CloseButtonText="Cancel"
+    DefaultButton="Primary"
+    PrimaryButtonClick="ContentDialog_PrimaryButtonClick"
+    Style="{StaticResource DefaultContentDialogStyle}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="540" Padding="0,0,12,0">
+        <StackPanel Spacing="16" Width="380">
+
+            <!-- 1. Game Name (Read-Only) -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Game Title (Locked)" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                <TextBox x:Name="TitleTextBox" IsReadOnly="True" Opacity="0.6"/>
+            </StackPanel>
+
+            <!-- 2. Company / Developer -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Company / Developer" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                <TextBox x:Name="CompanyTextBox" PlaceholderText="e.g. CD Projekt Red"/>
+            </StackPanel>
+
+            <!-- 3. Background Image URL -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Background Image URL" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                <TextBox x:Name="BackgroundUrlTextBox" PlaceholderText="https://..."/>
+            </StackPanel>
+
+            <!-- 4. Cover Image URL -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Cover Art URL" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                <TextBox x:Name="CoverArtTextBox" PlaceholderText="https://..."/>
+            </StackPanel>
+
+            <!-- 5. Icon URL -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Icon URL" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                <TextBox x:Name="IconUrlTextBox" PlaceholderText="https://..."/>
+            </StackPanel>
+
+            <!-- 6. Executable Path (Read-Only) -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Executable Path (Locked)" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                <TextBox x:Name="ExePathTextBox" IsReadOnly="True" Opacity="0.6"/>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</ContentDialog>
