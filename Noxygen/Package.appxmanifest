@@ -10,8 +10,8 @@
 
   <Identity
     Name="dae2ead8-8aba-4f5c-b433-1f6fe86570a1"
-    Publisher="CN=se7en"
-    Version="1.0.0.0" />
+    Publisher="CN=Hexedd7"
+    Version="1.0.1.0" />
 
   <mp:PhoneIdentity PhoneProductId="dae2ead8-8aba-4f5c-b433-1f6fe86570a1" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
