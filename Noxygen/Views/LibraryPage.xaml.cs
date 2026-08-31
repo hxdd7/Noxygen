@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using Noxygen.Models;
 using Noxygen.ViewModels;
@@ -126,5 +127,37 @@ public sealed partial class LibraryPage : Page
         };
 
         await dialog.ShowAsync();
+    }
+
+    private void GameCard_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+    {
+        if (sender is FrameworkElement element && element.DataContext is Game selectedGame)
+        {
+            NavigateToDetails(selectedGame);
+        }
+    }
+
+    private void ViewDetails_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement element && element.DataContext is Game selectedGame)
+        {
+            NavigateToDetails(selectedGame);
+        }
+    }
+
+    private void NavigateToDetails(Game game)
+    {
+        if (game == null) return;
+
+        // Navigates using the current page frame (or App.MainWindow Frame)
+        Frame.Navigate(typeof(GameDetailsPage), game);
+    }
+
+    private void GamesGridView_ItemClick(object sender, ItemClickEventArgs e)
+    {
+        if (e.ClickedItem is Game selectedGame)
+        {
+            NavigateToDetails(selectedGame);
+        }
     }
 }

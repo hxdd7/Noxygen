@@ -60,8 +60,6 @@ public partial class LibraryViewModel : ObservableObject
 
     public async Task InitializeAsync()
     {
-        if (DetectedGames.Count > 0) return;
-
         try
         {
             var cachedGames = await _dataService.LoadGamesAsync() ?? new List<Game>();
@@ -93,17 +91,21 @@ public partial class LibraryViewModel : ObservableObject
             {
                 var newGame = dialog.CreatedGame;
 
+                // Set default launcher label if empty
+                if (string.IsNullOrWhiteSpace(newGame.Launcher))
+                {
+                    newGame.Launcher = "Custom";
+                }
+
                 // Calculate total directory size if size wasn't set during creation
                 if (newGame.InstalledSizeGb == 0 && !string.IsNullOrEmpty(newGame.InstallPath) && Directory.Exists(newGame.InstallPath))
                 {
                     newGame.InstalledSizeGb = await Task.Run(() => CalculateDirectorySizeGb(newGame.InstallPath));
                 }
 
-                // Fetch metadata for custom added game if cover art is missing
-                if (string.IsNullOrWhiteSpace(newGame.CoverArtUrl))
-                {
-                    await _metadataService.FetchMetadataForGameAsync(newGame);
-                }
+                // Always attempt Steam lookup to get description, developer, and missing images
+                // (SteamMetadataService will leave Description empty if title isn't recognized)
+                await _metadataService.FetchMetadataForGameAsync(newGame);
 
                 _masterGameList.Add(newGame);
                 ApplySorting();
@@ -173,13 +175,14 @@ public partial class LibraryViewModel : ObservableObject
             // 1. Load existing games from cache with null fallback
             var existingGames = await _dataService.LoadGamesAsync() ?? new List<Game>();
 
-            // 2. Map existing games by Title + Launcher safely
+            // 2. Map existing games safely (handles custom games without launcher labels)
             var existingMap = new Dictionary<string, Game>(StringComparer.OrdinalIgnoreCase);
             foreach (var game in existingGames)
             {
                 if (game == null || string.IsNullOrWhiteSpace(game.Title)) continue;
 
-                string key = $"{game.Title}_{game.Launcher}";
+                string launcherLabel = string.IsNullOrWhiteSpace(game.Launcher) ? "Custom" : game.Launcher;
+                string key = $"{game.Title}_{launcherLabel}";
                 if (!existingMap.ContainsKey(key))
                 {
                     existingMap[key] = game;
@@ -206,7 +209,8 @@ public partial class LibraryViewModel : ObservableObject
             {
                 if (scannedGame == null || string.IsNullOrWhiteSpace(scannedGame.Title)) continue;
 
-                string key = $"{scannedGame.Title}_{scannedGame.Launcher}";
+                string launcherLabel = string.IsNullOrWhiteSpace(scannedGame.Launcher) ? "Custom" : scannedGame.Launcher;
+                string key = $"{scannedGame.Title}_{launcherLabel}";
 
                 Game targetGame = existingMap.TryGetValue(key, out var existing) ? existing : scannedGame;
 
@@ -224,10 +228,10 @@ public partial class LibraryViewModel : ObservableObject
                 existingMap.Remove(key);
             }
 
-            // 4. Preserve custom games
+            // 4. Preserve custom & manually added games
             finalGameList.AddRange(existingMap.Values.Where(g => g != null));
 
-            // 5. Download 2:3 vertical images, overwrite old disk files, and save JSON
+            // 5. Download images locally, update disk files, and save JSON
             await _dataService.SaveGamesAsync(finalGameList);
 
             // 6. Update master list & active view collection with active sort applied

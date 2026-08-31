@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using Noxygen.Models;
@@ -34,7 +35,12 @@ public class SteamMetadataService
                 }
             }
 
-            if (string.IsNullOrEmpty(steamAppId)) return;
+            // If no Steam ID matched, ensure description stays empty and exit
+            if (string.IsNullOrEmpty(steamAppId))
+            {
+                game.Description = string.Empty;
+                return;
+            }
 
             // Apply valid vertical cover URL (600x900)
             game.CoverArtUrl = $"https://cdn.cloudflare.steamstatic.com/steam/apps/{steamAppId}/library_600x900.jpg";
@@ -61,11 +67,23 @@ public class SteamMetadataService
                 {
                     game.Company = devs[0].GetString() ?? game.Company;
                 }
+
+                // Extract Steam description (stripping out any raw HTML formatting tags)
+                if (data.TryGetProperty("short_description", out var shortDesc))
+                {
+                    string rawDesc = shortDesc.GetString() ?? string.Empty;
+                    game.Description = StripHtml(rawDesc);
+                }
+            }
+            else
+            {
+                game.Description = string.Empty;
             }
         }
         catch
         {
-            // Fallback silently on network or parse failure
+            // Fallback silently on network or parse failure, ensuring empty description
+            game.Description = string.Empty;
         }
     }
 
@@ -89,5 +107,19 @@ public class SteamMetadataService
         catch { }
 
         return null;
+    }
+
+    /// <summary>
+    /// Removes HTML tags and converts common HTML entities into plain text for TextBlock rendering.
+    /// </summary>
+    private static string StripHtml(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+
+        // Remove HTML tags
+        string plainText = Regex.Replace(input, "<.*?>", string.Empty);
+
+        // Decode HTML entities (e.g., &quot;, &amp;, &quot;)
+        return HttpUtility.HtmlDecode(plainText).Trim();
     }
 }

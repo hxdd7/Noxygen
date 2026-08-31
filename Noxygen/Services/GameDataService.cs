@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Noxygen.Helpers;
 using Noxygen.Models;
 
 namespace Noxygen.Services;
@@ -19,6 +23,61 @@ public class GameDataService
 
     private static readonly HttpClient _httpClient = new();
 
+    public GameDataService()
+    {
+        if (!Directory.Exists(FolderPath))
+            Directory.CreateDirectory(FolderPath);
+
+        if (!Directory.Exists(ImageCacheFolder))
+            Directory.CreateDirectory(ImageCacheFolder);
+
+        if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
+        {
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 NoxygenApp/1.0");
+        }
+    }
+
+    /// <summary>
+    /// Loads saved local games, scans for newly installed launcher games, 
+    /// merges them without deleting manual entries, and saves back to cache.
+    /// </summary>
+    public async Task<List<Game>> LoadAndSyncGamesAsync()
+    {
+        // 1. Load existing saved games (including manual additions)
+        var savedGames = await LoadGamesAsync();
+        var savedMap = savedGames.ToDictionary(g => g.Title, StringComparer.OrdinalIgnoreCase);
+
+        // 2. Scan system for launcher installations
+        var scanner = new GameScanner();
+        var scannedGames = await Task.Run(() => scanner.ScanAll());
+
+        // 3. Merge scanned games into saved games
+        foreach (var scanned in scannedGames)
+        {
+            if (!savedMap.ContainsKey(scanned.Title))
+            {
+                // New game found on disk -> add to list
+                savedGames.Add(scanned);
+            }
+            else
+            {
+                // Existing game -> update install/exe paths in case they moved, keep custom URLs
+                var existing = savedMap[scanned.Title];
+                existing.InstallPath = scanned.InstallPath;
+                existing.ExecutablePath = string.IsNullOrWhiteSpace(existing.ExecutablePath) ? scanned.ExecutablePath : existing.ExecutablePath;
+                existing.InstalledSizeGb = scanned.InstalledSizeGb;
+
+                if (string.IsNullOrWhiteSpace(existing.SteamId))
+                    existing.SteamId = scanned.SteamId;
+            }
+        }
+
+        // 4. Cache remote images & save merged list
+        await SaveGamesAsync(savedGames);
+
+        return savedGames;
+    }
+
     public List<Game> LoadGamesSync()
     {
         try
@@ -33,14 +92,9 @@ public class GameDataService
         }
     }
 
-    public GameDataService()
+    public async Task<List<Game>> LoadGamesAsync()
     {
-        // Guarantees the directories exist as soon as GameDataService is instantiated
-        if (!Directory.Exists(FolderPath))
-            Directory.CreateDirectory(FolderPath);
-
-        if (!Directory.Exists(ImageCacheFolder))
-            Directory.CreateDirectory(ImageCacheFolder);
+        return await Task.Run(LoadGamesSync);
     }
 
     public async Task SaveGamesAsync(List<Game> games)
@@ -50,7 +104,6 @@ public class GameDataService
             if (!Directory.Exists(FolderPath)) Directory.CreateDirectory(FolderPath);
             if (!Directory.Exists(ImageCacheFolder)) Directory.CreateDirectory(ImageCacheFolder);
 
-            // Download & cache remote images locally to prevent UI lag
             foreach (var game in games)
             {
                 game.CoverArtUrl = await CacheImageAsync(game.CoverArtUrl, $"{game.Title}_cover");
@@ -64,17 +117,11 @@ public class GameDataService
         catch { }
     }
 
-    public async Task<List<Game>> LoadGamesAsync()
-    {
-        return await Task.Run(LoadGamesSync);
-    }
-
     private async Task<string> CacheImageAsync(string rawUrl, string filePrefix)
     {
         if (string.IsNullOrWhiteSpace(rawUrl))
             return string.Empty;
 
-        // If it's already a local file path or non-HTTP, skip caching
         if (!rawUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
             !rawUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
@@ -83,10 +130,10 @@ public class GameDataService
 
         try
         {
-            // Create a safe, unique filename per image
-            string safeName = string.Join("_", filePrefix.Split(Path.GetInvalidFileNameChars()));
+            string safePrefix = string.Join("_", filePrefix.Split(Path.GetInvalidFileNameChars()));
+            string urlHash = GetMd5Hash(rawUrl);
             string extension = GetImageExtension(rawUrl);
-            string localFilePath = Path.Combine(ImageCacheFolder, $"{safeName}{extension}");
+            string localFilePath = Path.Combine(ImageCacheFolder, $"{safePrefix}_{urlHash}{extension}");
 
             if (File.Exists(localFilePath))
             {
@@ -100,16 +147,24 @@ public class GameDataService
         }
         catch
         {
-            // If download fails, retain the original URL as a fallback
             return rawUrl;
         }
     }
 
     private string GetImageExtension(string url)
     {
-        if (url.EndsWith(".png", StringComparison.OrdinalIgnoreCase)) return ".png";
-        if (url.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)) return ".webp";
-        if (url.EndsWith(".gif", StringComparison.OrdinalIgnoreCase)) return ".gif";
+        string cleanUrl = url.Split('?')[0].Split('#')[0];
+        if (cleanUrl.EndsWith(".png", StringComparison.OrdinalIgnoreCase)) return ".png";
+        if (cleanUrl.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)) return ".webp";
+        if (cleanUrl.EndsWith(".gif", StringComparison.OrdinalIgnoreCase)) return ".gif";
+        if (cleanUrl.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)) return ".jpeg";
         return ".jpg";
+    }
+
+    private string GetMd5Hash(string input)
+    {
+        byte[] inputBytes = Encoding.UTF8.GetBytes(input);
+        byte[] hashBytes = MD5.HashData(inputBytes);
+        return Convert.ToHexString(hashBytes)[..8];
     }
 }

@@ -27,6 +27,9 @@ public partial class MainWindow : Window
     private FontIcon? _toggleMenuIcon;
     private List<Game> _cachedGames = new();
 
+    // Dynamic game sidebar tab
+    private NavigationViewItem? _dynamicGameNavItem;
+
     public MainWindow()
     {
         this.InitializeComponent();
@@ -73,24 +76,24 @@ public partial class MainWindow : Window
         TitleBarBackButton.Visibility = (ContentFrame.CanGoBack && ContentFrame.BackStackDepth > 0)
             ? Visibility.Visible
             : Visibility.Collapsed;
+
+        // Auto-remove dynamic tab if navigating away from GameDetailsPage
+        if (e.SourcePageType == typeof(LibraryPage) || e.SourcePageType == typeof(SettingsPage))
+        {
+            RemoveGameDetailsTab();
+        }
     }
 
     private void NavView_Loaded(object sender, RoutedEventArgs e)
     {
-        // 1. Find the Library menu item by Tag
         var libraryItem = NavView.MenuItems
             .OfType<NavigationViewItem>()
             .FirstOrDefault(item => item.Tag?.ToString() == "LibraryPage");
 
         if (libraryItem != null)
         {
-            // 2. Setting SelectedItem automatically draws the accent indicator bar
             NavView.SelectedItem = libraryItem;
-
-            // 3. Navigate to the page
             ContentFrame.Navigate(typeof(Views.LibraryPage));
-
-            // 4. Ensure back stack starts clean without showing back button on boot
             ContentFrame.BackStack.Clear();
             TitleBarBackButton.Visibility = Visibility.Collapsed;
         }
@@ -101,16 +104,85 @@ public partial class MainWindow : Window
         _cachedGames = _dataService.LoadGamesSync();
     }
 
+    /// <summary>
+    /// Creates and shows the dynamic navigation tab with game title and custom cover image icon.
+    /// </summary>
+    public void OpenGameDetailsTab(Game game)
+    {
+        if (game == null) return;
+
+        // Remove existing item if present
+        if (_dynamicGameNavItem != null)
+        {
+            NavView.MenuItems.Remove(_dynamicGameNavItem);
+            _dynamicGameNavItem = null;
+        }
+
+        // Build image icon
+        IconElement iconElement;
+        string imagePath = !string.IsNullOrWhiteSpace(game.CoverArtUrl) ? game.CoverArtUrl : game.BackgroundUrl;
+
+        if (!string.IsNullOrWhiteSpace(imagePath))
+        {
+            iconElement = new ImageIcon
+            {
+                Source = new BitmapImage(new Uri(imagePath))
+            };
+        }
+        else
+        {
+            iconElement = new FontIcon { Glyph = "\uE7FC" };
+        }
+
+        // Create item
+        _dynamicGameNavItem = new NavigationViewItem
+        {
+            Content = game.Title,
+            Icon = iconElement,
+            Tag = game
+        };
+
+        // Add item to menu
+        NavView.MenuItems.Add(_dynamicGameNavItem);
+
+        // Set selection & Navigate
+        NavView.SelectedItem = _dynamicGameNavItem;
+        ContentFrame.Navigate(typeof(GameDetailsPage), game);
+    }
+
+    /// <summary>
+    /// Removes the dynamic game tab from sidebar menu.
+    /// </summary>
+    public void RemoveGameDetailsTab()
+    {
+        if (_dynamicGameNavItem != null)
+        {
+            NavView.MenuItems.Remove(_dynamicGameNavItem);
+            _dynamicGameNavItem = null;
+        }
+    }
+
     private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
         if (args.IsSettingsSelected)
         {
+            RemoveGameDetailsTab();
             NavigateToPage(typeof(SettingsPage));
             return;
         }
 
         if (args.SelectedItemContainer is NavigationViewItem item)
         {
+            // If user selects the active dynamic game tab
+            if (item == _dynamicGameNavItem && _dynamicGameNavItem.Tag is Game game)
+            {
+                if (ContentFrame.CurrentSourcePageType != typeof(GameDetailsPage))
+                {
+                    ContentFrame.Navigate(typeof(GameDetailsPage), game);
+                }
+                return;
+            }
+
             Type? pageType = item.Tag?.ToString() switch
             {
                 "LibraryPage" => typeof(LibraryPage),
@@ -119,6 +191,7 @@ public partial class MainWindow : Window
 
             if (pageType != null)
             {
+                RemoveGameDetailsTab();
                 NavigateToPage(pageType);
             }
         }
@@ -132,7 +205,7 @@ public partial class MainWindow : Window
         }
     }
 
-    #region Global Search Handlers (Dropdown Only)
+    #region Global Search Handlers
     private void NavSearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
     {
         if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
@@ -145,13 +218,11 @@ public partial class MainWindow : Window
                 return;
             }
 
-            // Always pull fresh cache in case games were newly scanned
             if (_cachedGames.Count == 0)
             {
                 RefreshGlobalGamesCache();
             }
 
-            // Populates strictly the dropdown menu (up to 8 results)
             sender.ItemsSource = _cachedGames
                 .Where(g => g.Title.Contains(query, StringComparison.OrdinalIgnoreCase))
                 .Select(g => g.Title)
@@ -170,7 +241,16 @@ public partial class MainWindow : Window
 
     private void NavSearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
     {
-        // Here you can trigger actions when a dropdown item is clicked (e.g., launch game, open detail dialog)
+        if (!string.IsNullOrWhiteSpace(args.QueryText))
+        {
+            var matchedGame = _cachedGames.FirstOrDefault(g =>
+                g.Title.Equals(args.QueryText, StringComparison.OrdinalIgnoreCase));
+
+            if (matchedGame != null)
+            {
+                OpenGameDetailsTab(matchedGame);
+            }
+        }
     }
     #endregion
 
@@ -181,7 +261,6 @@ public partial class MainWindow : Window
         {
             int themeIndex = (int)savedTheme;
 
-            // Set XAML Theme
             rootElement.RequestedTheme = themeIndex switch
             {
                 1 => ElementTheme.Light,
@@ -189,7 +268,6 @@ public partial class MainWindow : Window
                 _ => ElementTheme.Default
             };
 
-            // Synchronize Native Title Bar Caption Buttons
             UpdateTitleBarTheme(rootElement.ActualTheme);
         }
     }
@@ -205,11 +283,9 @@ public partial class MainWindow : Window
             bool isDark = currentTheme == ElementTheme.Dark ||
                          (currentTheme == ElementTheme.Default && Application.Current.RequestedTheme == ApplicationTheme.Dark);
 
-            // Set button background to transparent so it blends with your title bar
             appWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
             appWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
 
-            // Adjust button icon color based on active theme
             if (isDark)
             {
                 appWindow.TitleBar.ButtonForegroundColor = Colors.White;
