@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Navigation;
 using Noxygen.Models;
 using Noxygen.ViewModels;
 using System;
+using System.IO;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -44,74 +45,59 @@ public sealed partial class LibraryPage : Page
     }
     public async void PlayButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not Button playButton || playButton.Tag is not string exePath || string.IsNullOrWhiteSpace(exePath))
+        if (sender is not Button playButton || playButton.DataContext is not Game game)
         {
             return;
         }
 
-        // Find the loading ring in the same container grid
-        ProgressRing? loadingRing = null;
-        if (playButton.Parent is Grid parentGrid)
-        {
-            foreach (var child in parentGrid.Children)
-            {
-                if (child is ProgressRing ring)
-                {
-                    loadingRing = ring;
-                    break;
-                }
-            }
-        }
-
-        // Show Loading Ring & Hide Play Button
-        playButton.Visibility = Visibility.Collapsed;
-        if (loadingRing != null)
-        {
-            loadingRing.Visibility = Visibility.Visible;
-            loadingRing.IsActive = true;
-        }
-
         try
         {
-            if (!System.IO.File.Exists(exePath))
+            // 1. Handle Steam Protocol Launch
+            if (string.Equals(game.Launcher, "Steam", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(game.AppId))
             {
-                await ShowErrorDialogAsync("Executable Not Found", $"Could not locate file at:\n{exePath}");
-                return;
+                var uri = new Uri($"steam://run/{game.AppId}");
+                await Windows.System.Launcher.LaunchUriAsync(uri);
+            }
+            // 2. Handle Epic Games Protocol Launch
+            else if (string.Equals(game.Launcher, "Epic", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(game.AppId))
+            {
+                var uri = new Uri($"com.epicgames.launcher://apps/{game.AppId}?action=launch");
+                await Windows.System.Launcher.LaunchUriAsync(uri);
+            }
+            // 3. Fallback to Direct Executable Execution
+            else
+            {
+                if (string.IsNullOrWhiteSpace(game.ExecutablePath) || !File.Exists(game.ExecutablePath))
+                {
+                    await ShowErrorDialogAsync("Executable Not Found", $"Could not locate file at:\n{game.ExecutablePath}");
+                    return;
+                }
+
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = game.ExecutablePath,
+                    WorkingDirectory = Path.GetDirectoryName(game.ExecutablePath) ?? string.Empty,
+                    UseShellExecute = true
+                };
+
+                Process.Start(startInfo);
             }
 
-            var startInfo = new ProcessStartInfo
+            // 4. Safely Hide Window to Tray
+            if (App.MainWindow != null)
             {
-                FileName = exePath,
-                WorkingDirectory = System.IO.Path.GetDirectoryName(exePath) ?? string.Empty,
-                UseShellExecute = true
-            };
-
-            // Start the process on a background thread
-            await Task.Run(() =>
-            {
-                using var process = Process.Start(startInfo);
-
-                // Optional brief delay to ensure process window initializes smoothly
-                Task.Delay(1500).Wait();
-            });
+                var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+                var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(windowHandle);
+                Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId)?.Hide();
+            }
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
         {
-            // User cancelled UAC prompt — ignore gracefully
+            // User cancelled UAC prompt
         }
         catch (Exception ex)
         {
             await ShowErrorDialogAsync("Failed to Launch Game", ex.Message);
-        }
-        finally
-        {
-            // Restore Play Button & Hide Loading Ring
-            if (loadingRing != null)
-            {
-                loadingRing.IsActive = false;
-                loadingRing.Visibility = Visibility.Collapsed;
-            }
-            playButton.Visibility = Visibility.Visible;
         }
     }
 
