@@ -68,26 +68,31 @@
         <GridView Grid.Row="1" ItemsSource="{x:Bind ViewModel.DetectedGames, Mode=OneWay}" SelectionMode="None">
             <GridView.ItemTemplate>
                 <DataTemplate x:DataType="models:Game">
-                    <Grid Width="280" Height="110" Margin="0,0,12,12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="8">
+                    <Grid Width="360" Height="150" Margin="0,0,12,12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="8">
 
                         <!-- Context Menu -->
                         <Grid.ContextFlyout>
                             <MenuFlyout>
                                 <MenuFlyoutItem Text="View Details" 
                                 Click="ViewDetails_Click">
-                                        <MenuFlyoutItem.Icon>
-                                            <FontIcon Glyph="&#xE946;" />
-                                        </MenuFlyoutItem.Icon>
-                                    </MenuFlyoutItem>
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE946;" />
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutItem Text="{x:Bind PinMenuText, Mode=OneWay}" Click="ContextPinGame_Click">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="" />
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
 
-                                    <MenuFlyoutSeparator />
+                                <MenuFlyoutSeparator />
 
-                                    <MenuFlyoutItem Text="Edit Details" Click="ContextEditGame_Click">
-                                        <MenuFlyoutItem.Icon>
-                                            <FontIcon Glyph="&#xE70F;" />
-                                        </MenuFlyoutItem.Icon>
-                                    </MenuFlyoutItem>
-                                    <MenuFlyoutItem Text="Remove Game" Click="ContextDeleteGame_Click">
+                                <MenuFlyoutItem Text="Edit Details" Click="ContextEditGame_Click">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE70F;" />
+                                </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutItem Text="Remove Game" Click="ContextDeleteGame_Click">
                                     <MenuFlyoutItem.Icon>
                                         <FontIcon Glyph="&#xE74D;" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                                     </MenuFlyoutItem.Icon>
@@ -96,7 +101,7 @@
                         </Grid.ContextFlyout>
 
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="70" />
+                            <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 

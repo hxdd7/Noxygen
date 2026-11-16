@@ -1,9 +1,15 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace Noxygen.Models;
 
 public partial class Game : ObservableObject
 {
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PinMenuText))]
+    private bool _isPinned;
+
     public string Title { get; set; } = string.Empty;
     public string InstallPath { get; set; } = string.Empty;
     public string ExecutablePath { get; set; } = string.Empty;
@@ -22,4 +28,5 @@ public partial class Game : ObservableObject
     public string CoverArtUrl { get; set; } = string.Empty;
     public string IconUrl { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+    public string PinMenuText => IsPinned ? "Unpin from Sidebar" : "Pin to Sidebar";
 }

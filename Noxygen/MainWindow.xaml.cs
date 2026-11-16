@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using H.NotifyIcon;
 using Microsoft.UI;
@@ -9,9 +10,11 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 using Noxygen.Models;
 using Noxygen.Services;
+using Noxygen.ViewModels;
 using Noxygen.Views;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Windows.Storage;
 using Windows.UI;
@@ -21,6 +24,7 @@ namespace Noxygen;
 
 public partial class MainWindow : Window
 {
+    public MainViewModel ViewModel { get; } = new();
     private readonly GameDataService _dataService = new();
     private bool _isWindowVisible = true;
     private MenuFlyoutItem? _toggleMenuItem;
@@ -86,6 +90,8 @@ public partial class MainWindow : Window
 
     private void NavView_Loaded(object sender, RoutedEventArgs e)
     {
+        SyncPinnedSidebarItems();
+
         var libraryItem = NavView.MenuItems
             .OfType<NavigationViewItem>()
             .FirstOrDefault(item => item.Tag?.ToString() == "LibraryPage");
@@ -102,6 +108,12 @@ public partial class MainWindow : Window
     public void RefreshGlobalGamesCache()
     {
         _cachedGames = _dataService.LoadGamesSync();
+        ViewModel.RefreshPinnedGames(_cachedGames);
+
+        if (NavView != null)
+        {
+            SyncPinnedSidebarItems();
+        }
     }
 
     /// <summary>
@@ -173,13 +185,15 @@ public partial class MainWindow : Window
 
         if (args.SelectedItemContainer is NavigationViewItem item)
         {
-            // If user selects the active dynamic game tab
-            if (item == _dynamicGameNavItem && _dynamicGameNavItem.Tag is Game game)
+            // Handle both pinned games and the temporary dynamic game tab
+            if (item.Tag is Game game)
             {
-                if (ContentFrame.CurrentSourcePageType != typeof(GameDetailsPage))
+                if (item != _dynamicGameNavItem)
                 {
-                    ContentFrame.Navigate(typeof(GameDetailsPage), game);
+                    RemoveGameDetailsTab();
                 }
+
+                ContentFrame.Navigate(typeof(GameDetailsPage), game);
                 return;
             }
 
@@ -297,6 +311,47 @@ public partial class MainWindow : Window
                 appWindow.TitleBar.ButtonForegroundColor = Colors.Black;
                 appWindow.TitleBar.ButtonHoverForegroundColor = Colors.Black;
                 appWindow.TitleBar.ButtonHoverBackgroundColor = Color.FromArgb(20, 0, 0, 0);
+            }
+        }
+    }
+
+    private void SyncPinnedSidebarItems()
+    {
+        if (PinnedGamesHeader == null) return;
+
+        // 1. Remove old pinned game items (excluding the temporary dynamic tab)
+        var oldItems = NavView.MenuItems
+            .OfType<NavigationViewItem>()
+            .Where(i => i.Tag is Game && i != _dynamicGameNavItem)
+            .ToList();
+
+        foreach (var item in oldItems)
+        {
+            NavView.MenuItems.Remove(item);
+        }
+
+        // 2. Toggle subtitle header visibility
+        PinnedGamesHeader.Visibility = ViewModel.HasPinnedGames ? Visibility.Visible : Visibility.Collapsed;
+
+        // 3. Populate updated pinned games with the default Game icon
+        foreach (var game in ViewModel.PinnedGames)
+        {
+            var navItem = new NavigationViewItem
+            {
+                Content = game.Title,
+                Tag = game,
+                Icon = new FontIcon { Glyph = "\uE7FC" }
+            };
+
+            // Insert right after PinnedGamesHeader so temporary dynamic tabs stay at the bottom
+            int headerIndex = NavView.MenuItems.IndexOf(PinnedGamesHeader);
+            if (headerIndex >= 0)
+            {
+                NavView.MenuItems.Insert(headerIndex + 1, navItem);
+            }
+            else
+            {
+                NavView.MenuItems.Add(navItem);
             }
         }
     }

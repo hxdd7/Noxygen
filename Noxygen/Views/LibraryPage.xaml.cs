@@ -146,4 +146,12 @@ public sealed partial class LibraryPage : Page
             NavigateToDetails(selectedGame);
         }
     }
+
+    private async void ContextPinGame_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem menuItem && menuItem.DataContext is Game game)
+        {
+            await ViewModel.TogglePinGameCommand.ExecuteAsync(game);
+        }
+    }
 }

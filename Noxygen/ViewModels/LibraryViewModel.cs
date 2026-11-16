@@ -263,6 +263,15 @@ public partial class LibraryViewModel : ObservableObject
         }
     }
 
+    [RelayCommand]
+    public async Task TogglePinGameAsync(Game game)
+    {
+        if (game == null) return;
+
+        game.IsPinned = !game.IsPinned;
+        await SaveAndSyncCacheAsync();
+    }
+
     private void ApplySorting()
     {
         if (_masterGameList == null || !_masterGameList.Any())
@@ -290,7 +299,7 @@ public partial class LibraryViewModel : ObservableObject
         }
     }
 
-    private async Task SaveAndSyncCacheAsync()
+    public async Task SaveAndSyncCacheAsync()
     {
         await _dataService.SaveGamesAsync(_masterGameList.Where(g => g != null).ToList());
 

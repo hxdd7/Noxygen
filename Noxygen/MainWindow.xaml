@@ -81,6 +81,10 @@
 
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="Library" Icon="Library" Tag="LibraryPage" />
+
+                <NavigationViewItemHeader x:Name="PinnedGamesHeader" 
+                              Content="Pinned Games" 
+                              Visibility="Collapsed" />
             </NavigationView.MenuItems>
 
             <Frame x:Name="ContentFrame" Navigated="ContentFrame_Navigated" />
