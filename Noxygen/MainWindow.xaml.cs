@@ -362,23 +362,23 @@ public partial class MainWindow : Window
 
     public async void UpdateTaskbarJumpList()
     {
-        if (!Windows.UI.StartScreen.JumpList.IsSupported()) return;
+        if (!JumpList.IsSupported()) return;
 
         try
         {
-            var jumpList = await Windows.UI.StartScreen.JumpList.LoadCurrentAsync();
-            jumpList.SystemGroupKind = Windows.UI.StartScreen.JumpListSystemGroupKind.None;
+            var jumpList = await JumpList.LoadCurrentAsync();
+            jumpList.SystemGroupKind = JumpListSystemGroupKind.None;
             jumpList.Items.Clear();
 
-            // 1. Standard Task: Open Library (Required anchor)
-            var libraryTask = Windows.UI.StartScreen.JumpListItem.CreateWithArguments("--open-library", "Open Library");
+            // 1. Required anchor in the default "Tasks" section
+            var libraryTask = JumpListItem.CreateWithArguments("--open-library", "Open Library");
             libraryTask.Description = "Open Noxygen Library";
             libraryTask.Logo = new Uri("ms-appx:///Assets/Noxygen.png");
             jumpList.Items.Add(libraryTask);
 
-            // 2. Check setting (0 = Pinned, 1 = Recent)
+            // 2. Read saved mode (0 = Pinned Games, 1 = Recent Games)
             int jumpListMode = 0;
-            var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+            var localSettings = ApplicationData.Current.LocalSettings;
             if (localSettings.Values.TryGetValue("JumpListDisplayMode", out var modeObj) && modeObj is int modeVal)
             {
                 jumpListMode = modeVal;
@@ -386,38 +386,84 @@ public partial class MainWindow : Window
 
             if (jumpListMode == 1)
             {
-                // Mode 1: Display Top 3 Recent Games (No duplicates)
-                var recentTitles = Noxygen.Services.RecentGamesService.GetRecentGames().Take(3);
+                var recentTitles = RecentGamesService.GetRecentGames().Take(3);
+
                 foreach (var title in recentTitles)
                 {
                     if (string.IsNullOrWhiteSpace(title)) continue;
 
-                    var item = Windows.UI.StartScreen.JumpListItem.CreateWithArguments($"--launch-game \"{title}\"", title);
+                    // Check if the recent game is also in PinnedGames to grab its custom icon if available
+                    var matchingGame = ViewModel.PinnedGames.FirstOrDefault(g => string.Equals(g.Title, title, StringComparison.OrdinalIgnoreCase));
+
+                    var item = JumpListItem.CreateWithArguments($"--launch-game \"{title}\"", title);
                     item.Description = $"Launch Recent: {title}";
-                    item.Logo = new Uri("ms-appx:///Assets/Noxygen.png");
+                    item.Logo = GetGameIconUri(matchingGame?.IconUrl);
                     jumpList.Items.Add(item);
                 }
             }
             else
             {
-                // Mode 0: Display All Pinned Games
                 foreach (var game in ViewModel.PinnedGames)
                 {
                     if (game == null || string.IsNullOrWhiteSpace(game.Title)) continue;
 
-                    var item = Windows.UI.StartScreen.JumpListItem.CreateWithArguments($"--launch-game \"{game.Title}\"", game.Title);
+                    var item = JumpListItem.CreateWithArguments($"--launch-game \"{game.Title}\"", game.Title);
                     item.Description = $"Launch {game.Title}";
-                    item.Logo = new Uri("ms-appx:///Assets/Noxygen.png");
+                    item.Logo = GetGameIconUri(game.IconUrl);
                     jumpList.Items.Add(item);
                 }
             }
 
             await jumpList.SaveAsync();
-            System.Diagnostics.Debug.WriteLine($"[JumpList] Updated successfully with mode: {(jumpListMode == 1 ? "Recent" : "Pinned")}");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[JumpList] ERROR: {ex.Message}");
         }
+    }
+
+    private Uri GetGameIconUri(string? iconPath)
+    {
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(iconPath))
+            {
+                // 1. If it's already a valid ms-appx or ms-appdata URI, use it directly
+                if (Uri.TryCreate(iconPath, UriKind.Absolute, out var uri) &&
+                    (uri.Scheme == "ms-appx" || uri.Scheme == "ms-appdata"))
+                {
+                    return uri;
+                }
+
+                // 2. If it's a local file path anywhere on disk
+                if (System.IO.File.Exists(iconPath))
+                {
+                    string localFolder = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
+
+                    if (iconPath.StartsWith(localFolder, StringComparison.OrdinalIgnoreCase))
+                    {
+                        string relativePath = iconPath.Substring(localFolder.Length).TrimStart('\\', '/');
+                        return new Uri($"ms-appdata:///local/{relativePath.Replace('\\', '/')}");
+                    }
+                    else
+                    {
+                        string fileName = System.IO.Path.GetFileName(iconPath);
+                        string destPath = System.IO.Path.Combine(localFolder, "Cache", fileName);
+
+                        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(destPath)!);
+                        System.IO.File.Copy(iconPath, destPath, true);
+
+                        return new Uri($"ms-appdata:///local/Cache/{fileName}");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[JumpList Icon Error] {ex.Message}");
+        }
+
+        // Fallback: If no custom icon URL is set, use the default app logo (Noxygen.png)
+        return new Uri("ms-appx:///Assets/Noxygen.png");
     }
 }
