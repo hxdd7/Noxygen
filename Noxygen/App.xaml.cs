@@ -137,6 +137,8 @@ public partial class App : Application
         // 1. Record to Recent Games history
         Noxygen.Services.RecentGamesService.AddRecentGame(game.Title);
 
+        Process? launchedProcess = null;
+
         // 2. Handle Steam, Epic, and Direct EXE launches cleanly
         if (string.Equals(game.Launcher, "Steam", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(game.AppId))
         {
@@ -148,12 +150,14 @@ public partial class App : Application
         }
         else if (!string.IsNullOrWhiteSpace(game.ExecutablePath) && File.Exists(game.ExecutablePath))
         {
-            Process.Start(new ProcessStartInfo
+            var startInfo = new ProcessStartInfo
             {
                 FileName = game.ExecutablePath,
                 WorkingDirectory = Path.GetDirectoryName(game.ExecutablePath) ?? string.Empty,
-                UseShellExecute = true
-            });
+                UseShellExecute = false // Required to track process exit for direct exes
+            };
+
+            launchedProcess = Process.Start(startInfo);
         }
 
         // Hide Noxygen window to tray after launching from the taskbar
@@ -164,6 +168,56 @@ public partial class App : Application
                 var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(MainWindow);
                 var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(windowHandle);
                 Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId)?.Hide();
+            }
+        });
+
+        // 3. Automatically unhide window when direct process exits (if tracked)
+        if (launchedProcess != null)
+        {
+            launchedProcess.EnableRaisingEvents = true;
+            launchedProcess.Exited += (s, args) =>
+            {
+                MainWindow?.DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (MainWindow != null)
+                    {
+                        var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(MainWindow);
+                        var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(windowHandle);
+                        var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+
+                        appWindow?.Show();
+                        MainWindow.Activate();
+                    }
+                });
+            };
+        }
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    private const int SW_RESTORE = 9;
+
+    public void BringWindowToFront()
+    {
+        // Ensure this runs on the UI thread dispatcher if called from background activation events
+        MainWindow?.DispatcherQueue.TryEnqueue(() =>
+        {
+            if (MainWindow is MainWindow mainWindow)
+            {
+                // Bring the WinUI 3 window to the foreground
+                mainWindow.Activate();
+
+                // Force focus back using Win32 API
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(mainWindow);
+                if (hwnd != IntPtr.Zero)
+                {
+                    ShowWindow(hwnd, SW_RESTORE);
+                    SetForegroundWindow(hwnd);
+                }
             }
         });
     }
