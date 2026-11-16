@@ -14,6 +14,7 @@
             <TextBlock Text="Settings" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,24"/>
 
             <!-- Appearance and behavior Section -->
+            <!-- Appearance and behavior Section -->
             <TextBlock Text="Appearance and behavior" 
                        Style="{StaticResource BodyStrongTextBlockStyle}" 
                        Margin="0,0,0,8"/>
@@ -24,7 +25,7 @@
                     Header="App Theme"
                     Description="Select which app theme to display">
                     <labs:SettingsCard.HeaderIcon>
-                        <FontIcon Glyph="&#xE790;" />
+                        <FontIcon Glyph="" />
                     </labs:SettingsCard.HeaderIcon>
 
                     <ComboBox 
@@ -33,6 +34,22 @@
                         <ComboBoxItem Content="Use system setting"/>
                         <ComboBoxItem Content="Light"/>
                         <ComboBoxItem Content="Dark"/>
+                    </ComboBox>
+                </labs:SettingsCard>
+
+                <!-- Jump List Content Mode -->
+                <labs:SettingsCard 
+                    Header="Taskbar Jump List Content"
+                    Description="Choose whether to show your pinned library games or recent play history">
+                    <labs:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="" />
+                    </labs:SettingsCard.HeaderIcon>
+
+                    <ComboBox 
+                        SelectedIndex="{x:Bind ViewModel.JumpListModeIndex, Mode=TwoWay}"
+                        Width="180">
+                        <ComboBoxItem Content="Pinned Games"/>
+                        <ComboBoxItem Content="Recent Games (Top 3)"/>
                     </ComboBox>
                 </labs:SettingsCard>
             </StackPanel>

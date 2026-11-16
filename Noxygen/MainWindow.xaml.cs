@@ -18,6 +18,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Windows.Storage;
 using Windows.UI;
+using Windows.UI.StartScreen;
 using WinRT.Interop;
 
 namespace Noxygen;
@@ -353,6 +354,70 @@ public partial class MainWindow : Window
             {
                 NavView.MenuItems.Add(navItem);
             }
+        }
+        
+        // 4. Sync the Windows taskbar right-click Jump List
+        UpdateTaskbarJumpList();
+    }
+
+    public async void UpdateTaskbarJumpList()
+    {
+        if (!Windows.UI.StartScreen.JumpList.IsSupported()) return;
+
+        try
+        {
+            var jumpList = await Windows.UI.StartScreen.JumpList.LoadCurrentAsync();
+            jumpList.SystemGroupKind = Windows.UI.StartScreen.JumpListSystemGroupKind.None;
+            jumpList.Items.Clear();
+
+            // 1. Standard Task: Open Library (Required anchor)
+            var libraryTask = Windows.UI.StartScreen.JumpListItem.CreateWithArguments("--open-library", "Open Library");
+            libraryTask.Description = "Open Noxygen Library";
+            libraryTask.Logo = new Uri("ms-appx:///Assets/Noxygen.png");
+            jumpList.Items.Add(libraryTask);
+
+            // 2. Check setting (0 = Pinned, 1 = Recent)
+            int jumpListMode = 0;
+            var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+            if (localSettings.Values.TryGetValue("JumpListDisplayMode", out var modeObj) && modeObj is int modeVal)
+            {
+                jumpListMode = modeVal;
+            }
+
+            if (jumpListMode == 1)
+            {
+                // Mode 1: Display Top 3 Recent Games (No duplicates)
+                var recentTitles = Noxygen.Services.RecentGamesService.GetRecentGames().Take(3);
+                foreach (var title in recentTitles)
+                {
+                    if (string.IsNullOrWhiteSpace(title)) continue;
+
+                    var item = Windows.UI.StartScreen.JumpListItem.CreateWithArguments($"--launch-game \"{title}\"", title);
+                    item.Description = $"Launch Recent: {title}";
+                    item.Logo = new Uri("ms-appx:///Assets/Noxygen.png");
+                    jumpList.Items.Add(item);
+                }
+            }
+            else
+            {
+                // Mode 0: Display All Pinned Games
+                foreach (var game in ViewModel.PinnedGames)
+                {
+                    if (game == null || string.IsNullOrWhiteSpace(game.Title)) continue;
+
+                    var item = Windows.UI.StartScreen.JumpListItem.CreateWithArguments($"--launch-game \"{game.Title}\"", game.Title);
+                    item.Description = $"Launch {game.Title}";
+                    item.Logo = new Uri("ms-appx:///Assets/Noxygen.png");
+                    jumpList.Items.Add(item);
+                }
+            }
+
+            await jumpList.SaveAsync();
+            System.Diagnostics.Debug.WriteLine($"[JumpList] Updated successfully with mode: {(jumpListMode == 1 ? "Recent" : "Pinned")}");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[JumpList] ERROR: {ex.Message}");
         }
     }
 }

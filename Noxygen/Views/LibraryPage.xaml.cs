@@ -52,19 +52,24 @@ public sealed partial class LibraryPage : Page
 
         try
         {
-            // 1. Handle Steam Protocol Launch
+            // 1. Record to Recent Games history
+            Noxygen.Services.RecentGamesService.AddRecentGame(game.Title);
+
+            Process? launchedProcess = null;
+
+            // 2. Handle Steam Protocol Launch
             if (string.Equals(game.Launcher, "Steam", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(game.AppId))
             {
                 var uri = new Uri($"steam://run/{game.AppId}");
                 await Windows.System.Launcher.LaunchUriAsync(uri);
             }
-            // 2. Handle Epic Games Protocol Launch
+            // 3. Handle Epic Games Protocol Launch
             else if (string.Equals(game.Launcher, "Epic", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(game.AppId))
             {
                 var uri = new Uri($"com.epicgames.launcher://apps/{game.AppId}?action=launch");
                 await Windows.System.Launcher.LaunchUriAsync(uri);
             }
-            // 3. Fallback to Direct Executable Execution
+            // 4. Fallback to Direct Executable Execution
             else
             {
                 if (string.IsNullOrWhiteSpace(game.ExecutablePath) || !File.Exists(game.ExecutablePath))
@@ -77,18 +82,39 @@ public sealed partial class LibraryPage : Page
                 {
                     FileName = game.ExecutablePath,
                     WorkingDirectory = Path.GetDirectoryName(game.ExecutablePath) ?? string.Empty,
-                    UseShellExecute = true
+                    UseShellExecute = false // Required to track process exit for direct exes
                 };
 
-                Process.Start(startInfo);
+                launchedProcess = Process.Start(startInfo);
             }
 
-            // 4. Safely Hide Window to Tray
+            // 5. Hide Window to Tray
             if (App.MainWindow != null)
             {
                 var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
                 var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(windowHandle);
                 Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId)?.Hide();
+            }
+
+            // 6. Automatically unhide window when direct process exits (if tracked)
+            if (launchedProcess != null)
+            {
+                launchedProcess.EnableRaisingEvents = true;
+                launchedProcess.Exited += (s, args) =>
+                {
+                    App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        if (App.MainWindow != null)
+                        {
+                            var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+                            var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(windowHandle);
+                            var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+
+                            appWindow?.Show();
+                            App.MainWindow.Activate();
+                        }
+                    });
+                };
             }
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
