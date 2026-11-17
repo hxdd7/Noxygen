@@ -43,6 +43,7 @@ public sealed partial class LibraryPage : Page
             await ViewModel.DeleteGameCommand.ExecuteAsync(game);
         }
     }
+
     public async void PlayButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button playButton || playButton.DataContext is not Game game)
@@ -56,6 +57,9 @@ public sealed partial class LibraryPage : Page
             Noxygen.Services.RecentGamesService.AddRecentGame(game.Title);
 
             Process? launchedProcess = null;
+            string? targetExeName = !string.IsNullOrEmpty(game.ExecutablePath)
+                ? Path.GetFileNameWithoutExtension(game.ExecutablePath)
+                : null;
 
             // 2. Handle Steam Protocol Launch
             if (string.Equals(game.Launcher, "Steam", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(game.AppId))
@@ -82,7 +86,7 @@ public sealed partial class LibraryPage : Page
                 {
                     FileName = game.ExecutablePath,
                     WorkingDirectory = Path.GetDirectoryName(game.ExecutablePath) ?? string.Empty,
-                    UseShellExecute = false // Required to track process exit for direct exes
+                    UseShellExecute = false
                 };
 
                 launchedProcess = Process.Start(startInfo);
@@ -96,25 +100,41 @@ public sealed partial class LibraryPage : Page
                 Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId)?.Hide();
             }
 
-            // 6. Automatically unhide window when direct process exits (if tracked)
+            // 6. Handle Window Restoration (Direct Process or Process Name Polling for URIs)
             if (launchedProcess != null)
             {
                 launchedProcess.EnableRaisingEvents = true;
-                launchedProcess.Exited += (s, args) =>
+                launchedProcess.Exited += (s, args) => RestoreWindow();
+            }
+            else if (!string.IsNullOrEmpty(targetExeName))
+            {
+                // Background monitor for Steam/Epic games spawned via protocol URI
+                _ = Task.Run(async () =>
                 {
-                    App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
-                    {
-                        if (App.MainWindow != null)
-                        {
-                            var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-                            var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(windowHandle);
-                            var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+                    // Give the launcher a few seconds to spawn the game process
+                    await Task.Delay(4000);
 
-                            appWindow?.Show();
-                            App.MainWindow.Activate();
+                    Process? gameProc = null;
+                    // Wait for the game process to appear
+                    while (true)
+                    {
+                        var procs = Process.GetProcessesByName(targetExeName);
+                        if (procs.Length > 0)
+                        {
+                            gameProc = procs[0];
+                            break;
                         }
-                    });
-                };
+                        await Task.Delay(2000);
+                    }
+
+                    // Wait until the game process exits
+                    gameProc.EnableRaisingEvents = true;
+                    var tcs = new TaskCompletionSource();
+                    gameProc.Exited += (s, e) => tcs.SetResult();
+                    await tcs.Task;
+
+                    RestoreWindow();
+                });
             }
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
@@ -125,6 +145,20 @@ public sealed partial class LibraryPage : Page
         {
             await ShowErrorDialogAsync("Failed to Launch Game", ex.Message);
         }
+    }
+
+    private void RestoreWindow()
+    {
+        App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
+        {
+            if (App.MainWindow != null)
+            {
+                var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+                var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(windowHandle);
+                Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId)?.Show();
+                App.MainWindow.Activate();
+            }
+        });
     }
 
     private async System.Threading.Tasks.Task ShowErrorDialogAsync(string title, string message)

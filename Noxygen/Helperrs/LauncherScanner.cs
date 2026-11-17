@@ -20,7 +20,13 @@ public static class LauncherScanner
             string exe = Path.Combine(steamPath, "steam.exe");
             if (File.Exists(exe))
             {
-                launchers.Add(new Launcher { Name = "Steam", ExecutablePath = exe, UriScheme = "steam://open/main" });
+                launchers.Add(new Launcher
+                {
+                    Name = "Steam",
+                    ExecutablePath = exe,
+                    UriScheme = "steam://open/main",
+                    IconPath = "ms-appx:///Assets/Launchers/Steam.png"
+                });
             }
         }
 
@@ -28,7 +34,13 @@ public static class LauncherScanner
         string? epicExe = FindFileAcrossAllDrives(@"Epic Games\Launcher\Portal\Binaries\Win32\EpicGamesLauncher.exe");
         if (!string.IsNullOrEmpty(epicExe) && File.Exists(epicExe))
         {
-            launchers.Add(new Launcher { Name = "Epic Games", ExecutablePath = epicExe, UriScheme = "com.epicgames.launcher://" });
+            launchers.Add(new Launcher
+            {
+                Name = "Epic Games",
+                ExecutablePath = epicExe,
+                UriScheme = "com.epicgames.launcher://",
+                IconPath = "ms-appx:///Assets/Launchers/EpicGames.png"
+            });
         }
 
         // 3. GOG Galaxy
@@ -42,14 +54,25 @@ public static class LauncherScanner
 
         if (File.Exists(gogExe))
         {
-            launchers.Add(new Launcher { Name = "GOG Galaxy", ExecutablePath = gogExe });
+            launchers.Add(new Launcher
+            {
+                Name = "GOG Galaxy",
+                ExecutablePath = gogExe,
+                IconPath = "ms-appx:///Assets/Launchers/Gog.png"
+            });
         }
 
         // 4. Riot Client
         string riotExe = FindFileAcrossAllDrives(@"Riot Games\Riot Client\RiotClientServices.exe") ?? @"C:\Riot Games\Riot Client\RiotClientServices.exe";
         if (File.Exists(riotExe))
         {
-            launchers.Add(new Launcher { Name = "Riot Client", ExecutablePath = riotExe, UriScheme = "riotclient://" });
+            launchers.Add(new Launcher
+            {
+                Name = "Riot Client",
+                ExecutablePath = riotExe,
+                UriScheme = "riotclient://",
+                IconPath = "ms-appx:///Assets/Launchers/RiotGames.png"
+            });
         }
 
         // 5. EA App (Registry + All Drives Fallback)
@@ -64,7 +87,13 @@ public static class LauncherScanner
 
         if (!string.IsNullOrEmpty(eaExe) && File.Exists(eaExe))
         {
-            launchers.Add(new Launcher { Name = "EA App", ExecutablePath = eaExe, UriScheme = "origin://" });
+            launchers.Add(new Launcher
+            {
+                Name = "EA App",
+                ExecutablePath = eaExe,
+                UriScheme = "origin://",
+                IconPath = "ms-appx:///Assets/Launchers/EA.png"
+            });
         }
 
         // 6. Ubisoft Connect (Registry InstallDir + All Drives Fallback)
@@ -85,7 +114,13 @@ public static class LauncherScanner
 
         if (File.Exists(ubiExe))
         {
-            launchers.Add(new Launcher { Name = "Ubisoft Connect", ExecutablePath = ubiExe, UriScheme = "uplay://" });
+            launchers.Add(new Launcher
+            {
+                Name = "Ubisoft Connect",
+                ExecutablePath = ubiExe,
+                UriScheme = "uplay://",
+                IconPath = "ms-appx:///Assets/Launchers/Ubisoft.png"
+            });
         }
 
         return launchers;

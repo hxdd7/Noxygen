@@ -444,11 +444,52 @@ public partial class MainWindow : Window
 
         foreach (var launcher in savedLaunchers)
         {
+            IconElement iconElement;
+
+            // 1. Fallback or map icon path dynamically by name if cache is stale/empty
+            string iconPath = launcher.IconPath;
+            if (string.IsNullOrWhiteSpace(iconPath))
+            {
+                iconPath = launcher.Name switch
+                {
+                    "Steam" => "ms-appx:///Assets/Launchers/Steam.png",
+                    "Epic Games" => "ms-appx:///Assets/Launchers/EpicGames.png",
+                    "GOG Galaxy" => "ms-appx:///Assets/Launchers/Gog.png",
+                    "Riot Client" => "ms-appx:///Assets/Launchers/RiotGames.png",
+                    "EA App" => "ms-appx:///Assets/Launchers/EA.png",
+                    "Ubisoft Connect" => "ms-appx:///Assets/Launchers/Ubisoft.png",
+                    _ => string.Empty
+                };
+            }
+
+            // 2. Load the image icon
+            if (!string.IsNullOrWhiteSpace(iconPath))
+            {
+                try
+                {
+                    iconElement = new ImageIcon
+                    {
+                        Source = new BitmapImage(new Uri(iconPath)),
+                        Width = 20,
+                        Height = 20
+                    };
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Icon Load Error] {launcher.Name}: {ex.Message}");
+                    iconElement = new FontIcon { Glyph = "\uE7FC", FontSize = 16 };
+                }
+            }
+            else
+            {
+                iconElement = new FontIcon { Glyph = "\uE7FC", FontSize = 16 };
+            }
+
             var navItem = new NavigationViewItem
             {
                 Content = launcher.Name,
                 Tag = launcher,
-                Icon = new FontIcon { Glyph = "\uE756", FontSize = 16 }
+                Icon = iconElement
             };
 
             if (insertIndex > 0 && insertIndex <= NavView.MenuItems.Count)

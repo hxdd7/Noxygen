@@ -24,17 +24,14 @@ public partial class App : Application
         // Catch ALL unhandled background thread and XAML exceptions
         this.UnhandledException += async (sender, e) =>
         {
-            // 1. Prevent the immediate crash so you can read the output
             e.Handled = true;
 
-            // 2. Print exact error details to Visual Studio Output Window (Ctrl + Alt + O)
             Debug.WriteLine("==================================================");
             Debug.WriteLine($"[EXACT ERROR MESSAGE]: {e.Exception?.Message}");
             Debug.WriteLine($"[EXCEPTION TYPE]: {e.Exception?.GetType().FullName}");
             Debug.WriteLine($"[STACK TRACE]:\n{e.Exception?.StackTrace}");
             Debug.WriteLine("==================================================");
 
-            // 3. Show a UI Dialog Box with the exact error details
             if (MainWindow?.Content is FrameworkElement root)
             {
                 var dialog = new ContentDialog
@@ -59,15 +56,10 @@ public partial class App : Application
 
     protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
-        // 1. Check both LaunchActivatedEventArgs (Packaged) and CommandLineArgs for a Jump List click
-        string? gameToLaunch = ExtractGameTitleFromArgs(args.Arguments)
-                               ?? ExtractGameTitleFromArgs(Environment.GetCommandLineArgs());
-
-        // 2. Enforce Single-Instance so clicking the taskbar doesn't spawn duplicate windows
+        // 1. Enforce Single-Instance so clicking the taskbar doesn't spawn duplicate windows
         var mainInstance = AppInstance.FindOrRegisterForKey("NoxygenMainInstance");
         if (!mainInstance.IsCurrent)
         {
-            // Forward the Jump List click to the already-running instance and close this process
             var activatedArgs = AppInstance.GetCurrent().GetActivatedEventArgs();
             await mainInstance.RedirectActivationToAsync(activatedArgs);
             Process.GetCurrentProcess().Kill();
@@ -77,16 +69,22 @@ public partial class App : Application
         // Listen for Jump List clicks while Noxygen is already running
         mainInstance.Activated += OnAppInstanceActivated;
 
-        // 3. Initialize MainWindow and apply saved theme
+        // 2. Extract Jump List arguments on cold start
+        string? gameToLaunch = ExtractGameTitleFromArgs(args.Arguments)
+                               ?? ExtractGameTitleFromArgs(Environment.GetCommandLineArgs());
+
+        // 3. COLD START: If launched via Jump List while app was closed, quick-launch the game and exit without opening UI
+        if (!string.IsNullOrEmpty(gameToLaunch))
+        {
+            await QuickLaunchGameOnlyAsync(gameToLaunch);
+            Process.GetCurrentProcess().Kill();
+            return;
+        }
+
+        // 4. NORMAL START: Initialize MainWindow normally
         MainWindow = new MainWindow();
         ApplyThemeOnStartup();
         MainWindow.Activate();
-
-        // 4. Launch the game immediately if triggered from the taskbar on cold boot
-        if (!string.IsNullOrEmpty(gameToLaunch))
-        {
-            await LaunchGameByTitleAsync(gameToLaunch);
-        }
     }
 
     private async void OnAppInstanceActivated(object? sender, AppActivationArguments e)
@@ -96,7 +94,11 @@ public partial class App : Application
             string? gameTitle = ExtractGameTitleFromArgs(launchArgs.Arguments);
             if (!string.IsNullOrEmpty(gameTitle))
             {
-                await LaunchGameByTitleAsync(gameTitle);
+                // WARM START: App is already open, so hide it, launch game, and restore when game closes
+                MainWindow?.DispatcherQueue.TryEnqueue(async () =>
+                {
+                    await LaunchGameWhenAppIsOpenAsync(gameTitle);
+                });
             }
         }
     }
@@ -126,71 +128,147 @@ public partial class App : Application
         return null;
     }
 
-    private async Task LaunchGameByTitleAsync(string title)
+    /// <summary>
+    /// Used when the app was CLOSED. Quickly triggers the game launcher and terminates the helper process without opening a UI window.
+    /// </summary>
+    private async Task QuickLaunchGameOnlyAsync(string title)
     {
-        var dataService = new GameDataService();
-        var games = await dataService.LoadGamesAsync();
-        var game = games?.FirstOrDefault(g => string.Equals(g.Title, title, StringComparison.OrdinalIgnoreCase));
-
-        if (game == null) return;
-
-        // 1. Record to Recent Games history
-        Noxygen.Services.RecentGamesService.AddRecentGame(game.Title);
-
-        Process? launchedProcess = null;
-
-        // 2. Handle Steam, Epic, and Direct EXE launches cleanly
-        if (string.Equals(game.Launcher, "Steam", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(game.AppId))
+        try
         {
-            await Windows.System.Launcher.LaunchUriAsync(new Uri($"steam://run/{game.AppId}"));
-        }
-        else if (string.Equals(game.Launcher, "Epic", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(game.AppId))
-        {
-            await Windows.System.Launcher.LaunchUriAsync(new Uri($"com.epicgames.launcher://apps/{game.AppId}?action=launch"));
-        }
-        else if (!string.IsNullOrWhiteSpace(game.ExecutablePath) && File.Exists(game.ExecutablePath))
-        {
-            var startInfo = new ProcessStartInfo
+            var dataService = new GameDataService();
+            var games = dataService.LoadGamesSync();
+            var game = games?.FirstOrDefault(g => string.Equals(g.Title, title, StringComparison.OrdinalIgnoreCase));
+
+            if (game == null) return;
+
+            Noxygen.Services.RecentGamesService.AddRecentGame(game.Title);
+
+            if (string.Equals(game.Launcher, "Steam", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(game.AppId))
             {
-                FileName = game.ExecutablePath,
-                WorkingDirectory = Path.GetDirectoryName(game.ExecutablePath) ?? string.Empty,
-                UseShellExecute = false // Required to track process exit for direct exes
-            };
-
-            launchedProcess = Process.Start(startInfo);
+                await Windows.System.Launcher.LaunchUriAsync(new Uri($"steam://run/{game.AppId}"));
+            }
+            else if (string.Equals(game.Launcher, "Epic", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(game.AppId))
+            {
+                await Windows.System.Launcher.LaunchUriAsync(new Uri($"com.epicgames.launcher://apps/{game.AppId}?action=launch"));
+            }
+            else if (!string.IsNullOrWhiteSpace(game.ExecutablePath) && File.Exists(game.ExecutablePath))
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = game.ExecutablePath,
+                    WorkingDirectory = Path.GetDirectoryName(game.ExecutablePath) ?? string.Empty,
+                    UseShellExecute = true
+                });
+            }
         }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Quick Launch Error]: {ex.Message}");
+        }
+    }
 
-        // Hide Noxygen window to tray after launching from the taskbar
+    /// <summary>
+    /// Used when the app is ALREADY OPEN. Hides the app, launches the game, and automatically restores the window when the game exits.
+    /// </summary>
+    private async Task LaunchGameWhenAppIsOpenAsync(string title)
+    {
+        try
+        {
+            var dataService = new GameDataService();
+            var games = dataService.LoadGamesSync();
+            var game = games?.FirstOrDefault(g => string.Equals(g.Title, title, StringComparison.OrdinalIgnoreCase));
+
+            if (game == null) return;
+
+            Noxygen.Services.RecentGamesService.AddRecentGame(game.Title);
+
+            Process? launchedProcess = null;
+            string? targetExeName = !string.IsNullOrEmpty(game.ExecutablePath)
+                ? Path.GetFileNameWithoutExtension(game.ExecutablePath)
+                : null;
+
+            if (string.Equals(game.Launcher, "Steam", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(game.AppId))
+            {
+                await Windows.System.Launcher.LaunchUriAsync(new Uri($"steam://run/{game.AppId}"));
+            }
+            else if (string.Equals(game.Launcher, "Epic", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(game.AppId))
+            {
+                await Windows.System.Launcher.LaunchUriAsync(new Uri($"com.epicgames.launcher://apps/{game.AppId}?action=launch"));
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(game.ExecutablePath) || !File.Exists(game.ExecutablePath)) return;
+
+                launchedProcess = Process.Start(new ProcessStartInfo
+                {
+                    FileName = game.ExecutablePath,
+                    WorkingDirectory = Path.GetDirectoryName(game.ExecutablePath) ?? string.Empty,
+                    UseShellExecute = false
+                });
+            }
+
+            // Hide Noxygen window
+            MainWindow?.DispatcherQueue.TryEnqueue(() =>
+            {
+                if (MainWindow != null)
+                {
+                    var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(MainWindow);
+                    var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(windowHandle);
+                    Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId)?.Hide();
+                }
+            });
+
+            // Monitor process and unhide when game closes
+            if (launchedProcess != null)
+            {
+                launchedProcess.EnableRaisingEvents = true;
+                launchedProcess.Exited += (s, args) => RestoreWindow();
+            }
+            else if (!string.IsNullOrEmpty(targetExeName))
+            {
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(4000);
+
+                    Process? gameProc = null;
+                    while (true)
+                    {
+                        var procs = Process.GetProcessesByName(targetExeName);
+                        if (procs.Length > 0)
+                        {
+                            gameProc = procs[0];
+                            break;
+                        }
+                        await Task.Delay(2000);
+                    }
+
+                    gameProc.EnableRaisingEvents = true;
+                    var tcs = new TaskCompletionSource();
+                    gameProc.Exited += (s, e) => tcs.SetResult();
+                    await tcs.Task;
+
+                    RestoreWindow();
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[JumpList Launch Error]: {ex.Message}");
+        }
+    }
+
+    private void RestoreWindow()
+    {
         MainWindow?.DispatcherQueue.TryEnqueue(() =>
         {
             if (MainWindow != null)
             {
                 var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(MainWindow);
                 var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(windowHandle);
-                Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId)?.Hide();
+                Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId)?.Show();
+                MainWindow.Activate();
             }
         });
-
-        // 3. Automatically unhide window when direct process exits (if tracked)
-        if (launchedProcess != null)
-        {
-            launchedProcess.EnableRaisingEvents = true;
-            launchedProcess.Exited += (s, args) =>
-            {
-                MainWindow?.DispatcherQueue.TryEnqueue(() =>
-                {
-                    if (MainWindow != null)
-                    {
-                        var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(MainWindow);
-                        var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(windowHandle);
-                        var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
-
-                        appWindow?.Show();
-                        MainWindow.Activate();
-                    }
-                });
-            };
-        }
     }
 
     [System.Runtime.InteropServices.DllImport("user32.dll")]
@@ -203,15 +281,12 @@ public partial class App : Application
 
     public void BringWindowToFront()
     {
-        // Ensure this runs on the UI thread dispatcher if called from background activation events
         MainWindow?.DispatcherQueue.TryEnqueue(() =>
         {
             if (MainWindow is MainWindow mainWindow)
             {
-                // Bring the WinUI 3 window to the foreground
                 mainWindow.Activate();
 
-                // Force focus back using Win32 API
                 var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(mainWindow);
                 if (hwnd != IntPtr.Zero)
                 {
