@@ -1,5 +1,11 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Noxygen.Services;
+using Noxygen.Helpers;
+using System;
+using System.Threading.Tasks;
 using Windows.Storage;
 
 namespace Noxygen.ViewModels;
@@ -8,6 +14,7 @@ public partial class SettingsViewModel : ObservableObject
 {
     private const string SelectedThemeKey = "AppSelectedTheme";
     private const string JumpListModeKey = "JumpListDisplayMode";
+    private readonly LauncherDataService _launcherService = new();
 
     [ObservableProperty]
     private int _selectedThemeIndex;
@@ -83,6 +90,47 @@ public partial class SettingsViewModel : ObservableObject
                 2 => ElementTheme.Dark,
                 _ => ElementTheme.Default
             };
+        }
+    }
+
+    [RelayCommand]
+    private async Task ScanLaunchersAsync()
+    {
+        try
+        {
+            var detectedLaunchers = await Task.Run(() => LauncherScanner.ScanInstalledLaunchers());
+            await _launcherService.SaveLaunchersAsync(detectedLaunchers);
+
+            if (App.MainWindow is MainWindow mainWindow)
+            {
+                mainWindow.SyncLauncherSidebarItems();
+            }
+
+            if (App.MainWindow?.Content is FrameworkElement root)
+            {
+                var dialog = new ContentDialog
+                {
+                    Title = "Launcher Scan Complete",
+                    Content = $"Found and pinned {detectedLaunchers.Count} installed game launcher(s) to the sidebar.",
+                    CloseButtonText = "OK",
+                    XamlRoot = root.XamlRoot
+                };
+                await dialog.ShowAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            if (App.MainWindow?.Content is FrameworkElement root)
+            {
+                var dialog = new ContentDialog
+                {
+                    Title = "Scan Failed",
+                    Content = $"An error occurred while scanning launchers:\n{ex.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = root.XamlRoot
+                };
+                await dialog.ShowAsync();
+            }
         }
     }
 }

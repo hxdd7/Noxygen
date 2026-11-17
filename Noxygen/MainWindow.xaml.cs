@@ -13,8 +13,10 @@ using Noxygen.Services;
 using Noxygen.ViewModels;
 using Noxygen.Views;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using Windows.Storage;
 using Windows.UI;
@@ -31,6 +33,7 @@ public partial class MainWindow : Window
     private MenuFlyoutItem? _toggleMenuItem;
     private FontIcon? _toggleMenuIcon;
     private List<Game> _cachedGames = new();
+    private readonly LauncherDataService _launcherService = new();
 
     // Dynamic game sidebar tab
     private NavigationViewItem? _dynamicGameNavItem;
@@ -91,6 +94,7 @@ public partial class MainWindow : Window
 
     private void NavView_Loaded(object sender, RoutedEventArgs e)
     {
+        SyncLauncherSidebarItems();
         SyncPinnedSidebarItems();
 
         var libraryItem = NavView.MenuItems
@@ -175,7 +179,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    private async void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
         if (args.IsSettingsSelected)
         {
@@ -186,6 +190,39 @@ public partial class MainWindow : Window
 
         if (args.SelectedItemContainer is NavigationViewItem item)
         {
+            // Launch external game client and restore previous page selection
+            if (item.Tag is Launcher launcher)
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(launcher.UriScheme))
+                    {
+                        await Windows.System.Launcher.LaunchUriAsync(new Uri(launcher.UriScheme));
+                    }
+                    else if (File.Exists(launcher.ExecutablePath))
+                    {
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = launcher.ExecutablePath,
+                            WorkingDirectory = Path.GetDirectoryName(launcher.ExecutablePath),
+                            UseShellExecute = true
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Failed to launch {launcher.Name}: {ex.Message}");
+                }
+
+                // Reset selection back to the currently active page so the launcher button doesn't stay highlighted
+                if (ContentFrame.CurrentSourcePageType == typeof(SettingsPage))
+                    NavView.SelectedItem = NavView.SettingsItem;
+                else if (ContentFrame.CurrentSourcePageType == typeof(LibraryPage))
+                    NavView.SelectedItem = NavView.MenuItems.OfType<NavigationViewItem>().FirstOrDefault(i => i.Tag?.ToString() == "LibraryPage");
+
+                return;
+            }
+
             // Handle both pinned games and the temporary dynamic game tab
             if (item.Tag is Game game)
             {
@@ -334,14 +371,40 @@ public partial class MainWindow : Window
         // 2. Toggle subtitle header visibility
         PinnedGamesHeader.Visibility = ViewModel.HasPinnedGames ? Visibility.Visible : Visibility.Collapsed;
 
-        // 3. Populate updated pinned games with the default Game icon
+        // 3. Populate updated pinned games with their custom icons or fallback glyph
         foreach (var game in ViewModel.PinnedGames)
         {
+            if (game == null) continue;
+
+            IconElement iconElement;
+
+            // Use IconUrl if available, otherwise fall back to the controller FontIcon
+            if (!string.IsNullOrWhiteSpace(game.IconUrl))
+            {
+                try
+                {
+                    iconElement = new ImageIcon
+                    {
+                        Source = new BitmapImage(new Uri(game.IconUrl)),
+                        Width = 20,   // Match size explicitly 
+                        Height = 20
+                    };
+                }
+                catch
+                {
+                    iconElement = new FontIcon { Glyph = "\uE7FC", FontSize = 16 };
+                }
+            }
+            else
+            {
+                iconElement = new FontIcon { Glyph = "\uE7FC", FontSize = 16 };
+            }
+
             var navItem = new NavigationViewItem
             {
                 Content = game.Title,
                 Tag = game,
-                Icon = new FontIcon { Glyph = "\uE7FC" }
+                Icon = iconElement
             };
 
             // Insert right after PinnedGamesHeader so temporary dynamic tabs stay at the bottom
@@ -355,9 +418,48 @@ public partial class MainWindow : Window
                 NavView.MenuItems.Add(navItem);
             }
         }
-        
+
         // 4. Sync the Windows taskbar right-click Jump List
         UpdateTaskbarJumpList();
+    }
+
+    public void SyncLauncherSidebarItems()
+    {
+        if (LaunchersHeader == null) return;
+
+        var oldItems = NavView.MenuItems
+            .OfType<NavigationViewItem>()
+            .Where(i => i.Tag is Launcher)
+            .ToList();
+
+        foreach (var item in oldItems)
+        {
+            NavView.MenuItems.Remove(item);
+        }
+
+        var savedLaunchers = _launcherService.LoadLaunchersSync();
+        LaunchersHeader.Visibility = savedLaunchers.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        int insertIndex = NavView.MenuItems.IndexOf(LaunchersHeader) + 1;
+
+        foreach (var launcher in savedLaunchers)
+        {
+            var navItem = new NavigationViewItem
+            {
+                Content = launcher.Name,
+                Tag = launcher,
+                Icon = new FontIcon { Glyph = "\uE756", FontSize = 16 }
+            };
+
+            if (insertIndex > 0 && insertIndex <= NavView.MenuItems.Count)
+            {
+                NavView.MenuItems.Insert(insertIndex++, navItem);
+            }
+            else
+            {
+                NavView.MenuItems.Add(navItem);
+            }
+        }
     }
 
     public async void UpdateTaskbarJumpList()

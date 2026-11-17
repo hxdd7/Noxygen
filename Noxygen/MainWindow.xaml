@@ -64,6 +64,8 @@
             x:Name="NavView"
             Grid.Row="1"
             PaneDisplayMode="Left"
+            IsPaneOpen="True"
+            ExpandedModeThresholdWidth="0"
             IsBackButtonVisible="Collapsed"
             IsPaneToggleButtonVisible="False"
             SelectionChanged="NavView_SelectionChanged"
@@ -82,9 +84,13 @@
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="Library" Icon="Library" Tag="LibraryPage" />
 
+                <NavigationViewItemHeader x:Name="LaunchersHeader" 
+                      Content="Launchers" 
+                      Visibility="Collapsed" />
+
                 <NavigationViewItemHeader x:Name="PinnedGamesHeader" 
-                              Content="Pinned Games" 
-                              Visibility="Collapsed" />
+                      Content="Pinned Games" 
+                      Visibility="Collapsed" />
             </NavigationView.MenuItems>
 
             <Frame x:Name="ContentFrame" Navigated="ContentFrame_Navigated" />

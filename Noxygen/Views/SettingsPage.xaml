@@ -52,6 +52,20 @@
                         <ComboBoxItem Content="Recent Games (Top 3)"/>
                     </ComboBox>
                 </labs:SettingsCard>
+
+                <!-- Scan Installed Launchers Card -->
+                <labs:SettingsCard 
+                    Header="Scan Game Launchers"
+                    Description="Detect installed clients (Steam, Epic, GOG, Riot, EA, Ubisoft) and pin them to the sidebar">
+                                    <labs:SettingsCard.HeaderIcon>
+                                        <FontIcon Glyph="&#xE72C;" />
+                                    </labs:SettingsCard.HeaderIcon>
+
+                                    <Button 
+                                        Content="Scan Launchers" 
+                                        Command="{x:Bind ViewModel.ScanLaunchersCommand}"
+                                        Width="180" />
+                </labs:SettingsCard>
             </StackPanel>
 
             <!-- About Section -->
