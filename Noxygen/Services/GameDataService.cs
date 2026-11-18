@@ -14,8 +14,10 @@ namespace Noxygen.Services;
 
 public class GameDataService
 {
+    // Changed from LocalApplicationData to ApplicationData (Roaming AppData) 
+    // so user libraries persist across MSIX uninstalls and updates.
     private static readonly string FolderPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "Noxygen");
 
     private static readonly string ImageCacheFolder = Path.Combine(FolderPath, "ImageCache");

@@ -9,8 +9,10 @@ namespace Noxygen.Services;
 
 public class LauncherDataService
 {
+    // Changed from LocalApplicationData to ApplicationData (Roaming AppData)
+    // so launcher caches persist across MSIX uninstalls and updates.
     private static readonly string FolderPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "Noxygen");
 
     private static readonly string FilePath = Path.Combine(FolderPath, "launchers_cache.json");
