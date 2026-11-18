@@ -36,4 +36,3 @@ Visit the [Releases](https://github.com/hxdd7/Noxygen/releases) page and downloa
 ### 3. Install Noxygen
 1. Double-click **`Noxygen_1.x.x.x_x64.msix`**.
 2. Click **Install** when prompted.
-3. 
