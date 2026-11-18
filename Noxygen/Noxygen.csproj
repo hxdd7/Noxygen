@@ -72,6 +72,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Remove="Controls\GameCardControl.xaml" />
+    <None Remove="StatsPage.xaml" />
     <None Remove="Views\AddGameDialog.xaml" />
     <None Remove="Views\DashboardPage.xaml" />
     <None Remove="Views\EditGameDialog.xaml" />
@@ -118,6 +119,11 @@
     <Content Update="Assets\Noxygen.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="StatsPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Views\DashboardPage.xaml">

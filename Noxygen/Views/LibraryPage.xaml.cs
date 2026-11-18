@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using Noxygen.Models;
 using Noxygen.ViewModels;
+using Noxygen.Services;
 using System;
 using System.IO;
 using System.ComponentModel;
@@ -56,24 +57,28 @@ public sealed partial class LibraryPage : Page
             // 1. Record to Recent Games history
             Noxygen.Services.RecentGamesService.AddRecentGame(game.Title);
 
+            // 2. Initialize Playtime Tracker & Start Timer
+            var playtimeTracker = new PlaytimeTrackerService();
+            var sessionStartTime = DateTime.Now;
+
             Process? launchedProcess = null;
             string? targetExeName = !string.IsNullOrEmpty(game.ExecutablePath)
                 ? Path.GetFileNameWithoutExtension(game.ExecutablePath)
                 : null;
 
-            // 2. Handle Steam Protocol Launch
+            // 3. Handle Steam Protocol Launch
             if (string.Equals(game.Launcher, "Steam", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(game.AppId))
             {
                 var uri = new Uri($"steam://run/{game.AppId}");
                 await Windows.System.Launcher.LaunchUriAsync(uri);
             }
-            // 3. Handle Epic Games Protocol Launch
+            // 4. Handle Epic Games Protocol Launch
             else if (string.Equals(game.Launcher, "Epic", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(game.AppId))
             {
                 var uri = new Uri($"com.epicgames.launcher://apps/{game.AppId}?action=launch");
                 await Windows.System.Launcher.LaunchUriAsync(uri);
             }
-            // 4. Fallback to Direct Executable Execution
+            // 5. Fallback to Direct Executable Execution
             else
             {
                 if (string.IsNullOrWhiteSpace(game.ExecutablePath) || !File.Exists(game.ExecutablePath))
@@ -92,7 +97,7 @@ public sealed partial class LibraryPage : Page
                 launchedProcess = Process.Start(startInfo);
             }
 
-            // 5. Hide Window to Tray
+            // 6. Hide Window to Tray
             if (App.MainWindow != null)
             {
                 var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
@@ -100,11 +105,16 @@ public sealed partial class LibraryPage : Page
                 Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId)?.Hide();
             }
 
-            // 6. Handle Window Restoration (Direct Process or Process Name Polling for URIs)
+            // 7. Handle Window Restoration & Playtime Logging (Direct Process or Process Name Polling for URIs)
             if (launchedProcess != null)
             {
                 launchedProcess.EnableRaisingEvents = true;
-                launchedProcess.Exited += (s, args) => RestoreWindow();
+                launchedProcess.Exited += async (s, args) =>
+                {
+                    var sessionEndTime = DateTime.Now;
+                    await playtimeTracker.LogSessionAsync(game.Title, sessionStartTime, sessionEndTime);
+                    RestoreWindow();
+                };
             }
             else if (!string.IsNullOrEmpty(targetExeName))
             {
@@ -127,12 +137,17 @@ public sealed partial class LibraryPage : Page
                         await Task.Delay(2000);
                     }
 
+                    // Re-anchor start time right when the actual game process is detected running
+                    var activeStartTime = DateTime.Now;
+
                     // Wait until the game process exits
                     gameProc.EnableRaisingEvents = true;
                     var tcs = new TaskCompletionSource();
                     gameProc.Exited += (s, e) => tcs.SetResult();
                     await tcs.Task;
 
+                    var activeEndTime = DateTime.Now;
+                    await playtimeTracker.LogSessionAsync(game.Title, activeStartTime, activeEndTime);
                     RestoreWindow();
                 });
             }
@@ -195,7 +210,6 @@ public sealed partial class LibraryPage : Page
     {
         if (game == null) return;
 
-        // Navigates using the current page frame (or App.MainWindow Frame)
         Frame.Navigate(typeof(GameDetailsPage), game);
     }
 

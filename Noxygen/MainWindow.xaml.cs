@@ -238,6 +238,7 @@ public partial class MainWindow : Window
             Type? pageType = item.Tag?.ToString() switch
             {
                 "LibraryPage" => typeof(LibraryPage),
+                "StatsPage" => typeof(StatsPage),
                 _ => null
             };
 

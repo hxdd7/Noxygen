@@ -73,7 +73,7 @@ public partial class App : Application
         string? gameToLaunch = ExtractGameTitleFromArgs(args.Arguments)
                                ?? ExtractGameTitleFromArgs(Environment.GetCommandLineArgs());
 
-        // 3. COLD START: If launched via Jump List while app was closed, quick-launch the game and exit without opening UI
+        // 3. COLD START: If launched via Jump List while app was closed, quick-launch the game and exit without opening UI (No playtime logged)
         if (!string.IsNullOrEmpty(gameToLaunch))
         {
             await QuickLaunchGameOnlyAsync(gameToLaunch);
@@ -129,7 +129,7 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Used when the app was CLOSED. Quickly triggers the game launcher and terminates the helper process without opening a UI window.
+    /// Used when the app was CLOSED (Cold Start). Quickly triggers the game launcher and terminates without opening UI or tracking playtime.
     /// </summary>
     private async Task QuickLaunchGameOnlyAsync(string title)
     {
@@ -168,7 +168,7 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Used when the app is ALREADY OPEN. Hides the app, launches the game, and automatically restores the window when the game exits.
+    /// Used when the app is ALREADY OPEN (Warm Start via Jump List). Hides the app, launches the game, tracks playtime, and restores the window when closed.
     /// </summary>
     private async Task LaunchGameWhenAppIsOpenAsync(string title)
     {
@@ -181,6 +181,10 @@ public partial class App : Application
             if (game == null) return;
 
             Noxygen.Services.RecentGamesService.AddRecentGame(game.Title);
+
+            // Initialize Playtime Tracker & Start Timer
+            var playtimeTracker = new PlaytimeTrackerService();
+            var sessionStartTime = DateTime.Now;
 
             Process? launchedProcess = null;
             string? targetExeName = !string.IsNullOrEmpty(game.ExecutablePath)
@@ -218,11 +222,16 @@ public partial class App : Application
                 }
             });
 
-            // Monitor process and unhide when game closes
+            // Monitor process, log session on exit, and unhide when game closes
             if (launchedProcess != null)
             {
                 launchedProcess.EnableRaisingEvents = true;
-                launchedProcess.Exited += (s, args) => RestoreWindow();
+                launchedProcess.Exited += async (s, args) =>
+                {
+                    var sessionEndTime = DateTime.Now;
+                    await playtimeTracker.LogSessionAsync(game.Title, sessionStartTime, sessionEndTime);
+                    RestoreWindow();
+                };
             }
             else if (!string.IsNullOrEmpty(targetExeName))
             {
@@ -242,11 +251,14 @@ public partial class App : Application
                         await Task.Delay(2000);
                     }
 
+                    var activeStartTime = DateTime.Now;
                     gameProc.EnableRaisingEvents = true;
                     var tcs = new TaskCompletionSource();
                     gameProc.Exited += (s, e) => tcs.SetResult();
                     await tcs.Task;
 
+                    var activeEndTime = DateTime.Now;
+                    await playtimeTracker.LogSessionAsync(game.Title, activeStartTime, activeEndTime);
                     RestoreWindow();
                 });
             }
