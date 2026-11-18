@@ -34,6 +34,11 @@ public class PlaytimeTrackerService
     {
         if (string.IsNullOrWhiteSpace(gameTitle) || endTime <= startTime) return;
 
+        var duration = endTime - startTime;
+
+        // RULE: If playtime is less than 1 minute, don't save it
+        if (duration.TotalMinutes < 1) return;
+
         try
         {
             if (!Directory.Exists(FolderPath))

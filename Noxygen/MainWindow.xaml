@@ -83,7 +83,7 @@
 
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="Library" Icon="Library" Tag="LibraryPage" />
-                <NavigationViewItem Content="Statistics" Icon="Globe" Tag="StatsPage" />
+                <NavigationViewItem Content="Statistics" Icon="CalendarDay" Tag="StatsPage" />
 
                 <NavigationViewItemHeader x:Name="LaunchersHeader" 
                       Content="Launchers" 

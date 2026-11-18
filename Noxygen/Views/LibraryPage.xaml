@@ -12,7 +12,7 @@
         <converters:StringToImageSourceConverter x:Key="StringToImageConverter" />
     </Page.Resources>
 
-    <Grid Padding="24">
+    <Grid Padding="36">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
