@@ -105,7 +105,7 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
-                        <TextBlock Text="1.0.0" FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                        <TextBlock Text="1.0.4" FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                 </Grid>
             </Border>

@@ -12,8 +12,18 @@
     <WinUISDKReferences>false</WinUISDKReferences>
     <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
+    <Version>1.0.3.0</Version>
+    <AssemblyVersion>1.0.3.0</AssemblyVersion>
+    <FileVersion>1.0.3.0</FileVersion>
+    <ApplicationDisplayVersion>1.0.3</ApplicationDisplayVersion>
+    <ApplicationVersion>3</ApplicationVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Content Remove="Assets\BadgeLogo.scale-100.png" />
+    <Content Remove="Assets\BadgeLogo.scale-125.png" />
+    <Content Remove="Assets\BadgeLogo.scale-150.png" />
+    <Content Remove="Assets\BadgeLogo.scale-200.png" />
+    <Content Remove="Assets\BadgeLogo.scale-400.png" />
     <Content Remove="Assets\LargeTile.scale-100.png" />
     <Content Remove="Assets\LargeTile.scale-125.png" />
     <Content Remove="Assets\LargeTile.scale-150.png" />
@@ -167,7 +177,7 @@
 		<AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
 		<GenerateTestArtifacts>False</GenerateTestArtifacts>
 		<AppxBundle>Always</AppxBundle>
-		<AppxBundlePlatforms>x64</AppxBundlePlatforms>
+		<AppxBundlePlatforms>x86|x64</AppxBundlePlatforms>
 		<AppInstallerUri>https://raw.githubusercontent.com/hxdd7/Noxygen/main/Publish/Noxygen.appinstaller</AppInstallerUri>
 		<HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
 	</PropertyGroup>
