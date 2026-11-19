@@ -1,8 +1,8 @@
-<div align="center">
-  <img src="Noxygen/Assets/Noxygen.png" alt="Noxygen Logo" width="300"/>
+<div align="center">  
   <h1>
   <span>Noxygen</span>
   </h1>
+  <img src="Noxygen/Assets/Noxygen.png" alt="Noxygen Logo" width="300"/>
 </div>
 
 <p align="center">
