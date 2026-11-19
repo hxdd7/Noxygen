@@ -157,7 +157,8 @@ public partial class App : Application
                 {
                     FileName = game.ExecutablePath,
                     WorkingDirectory = Path.GetDirectoryName(game.ExecutablePath) ?? string.Empty,
-                    UseShellExecute = true
+                    UseShellExecute = game.RunAsAdmin,
+                    Verb = game.RunAsAdmin ? "runas" : string.Empty
                 });
             }
         }

@@ -45,6 +45,14 @@ public sealed partial class LibraryPage : Page
         }
     }
 
+    private async void ContextToggleRunAsAdmin_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem menuItem && menuItem.DataContext is Game game)
+        {
+            await ViewModel.ToggleRunAsAdminAsync(game);
+        }
+    }
+
     public async void PlayButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button playButton || playButton.DataContext is not Game game)
@@ -91,7 +99,8 @@ public sealed partial class LibraryPage : Page
                 {
                     FileName = game.ExecutablePath,
                     WorkingDirectory = Path.GetDirectoryName(game.ExecutablePath) ?? string.Empty,
-                    UseShellExecute = false
+                    UseShellExecute = game.RunAsAdmin,
+                    Verb = game.RunAsAdmin ? "runas" : string.Empty
                 };
 
                 launchedProcess = Process.Start(startInfo);

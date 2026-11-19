@@ -8,7 +8,12 @@ public partial class Game : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PinMenuText))]
+    [NotifyPropertyChangedFor(nameof(PinMenuGlyph))]
     private bool _isPinned;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(RunAsAdminMenuText))]
+    private bool _runAsAdmin;
 
     public string Title { get; set; } = string.Empty;
     public string InstallPath { get; set; } = string.Empty;
@@ -28,5 +33,9 @@ public partial class Game : ObservableObject
     public string CoverArtUrl { get; set; } = string.Empty;
     public string IconUrl { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+
     public string PinMenuText => IsPinned ? "Unpin from Sidebar" : "Pin to Sidebar";
+    public string PinMenuGlyph => IsPinned ? "\uE77A" : "\uE718";
+
+    public string RunAsAdminMenuText => RunAsAdmin ? "Disable Run as Administrator" : "Run as Administrator";
 }

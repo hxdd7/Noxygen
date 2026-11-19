@@ -272,6 +272,15 @@ public partial class LibraryViewModel : ObservableObject
         await SaveAndSyncCacheAsync();
     }
 
+    [RelayCommand]
+    public async Task ToggleRunAsAdminAsync(Game game)
+    {
+        if (game == null) return;
+
+        game.RunAsAdmin = !game.RunAsAdmin;
+        await SaveAndSyncCacheAsync();
+    }
+
     private void ApplySorting()
     {
         if (_masterGameList == null || !_masterGameList.Any())
