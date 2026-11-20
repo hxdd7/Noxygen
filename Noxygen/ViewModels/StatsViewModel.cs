@@ -31,6 +31,8 @@ public partial class StatsViewModel : ObservableObject
     private List<PlaytimeSession> _allSessions = new();
     private List<Game> _allGames = new();
     private ElementTheme _currentTheme = ElementTheme.Default;
+    private DateTime _inspectedDate = DateTime.Today;
+    private DateTime? _pinnedDate;
 
     [ObservableProperty]
     private StatsTimePeriod _selectedTimePeriod = StatsTimePeriod.LastWeek;
@@ -50,8 +52,24 @@ public partial class StatsViewModel : ObservableObject
     [ObservableProperty]
     private string _heatmapSummaryText = "0 playtime in the last year";
 
+    [ObservableProperty]
+    private string _selectedDayTitle = "Today";
+
+    [ObservableProperty]
+    private string _selectedDaySubtitle = DateTime.Today.ToString("dddd, MMM d, yyyy", CultureInfo.InvariantCulture);
+
+    [ObservableProperty]
+    private string _selectedDayTotalFormatted = "0 mins";
+
+    [ObservableProperty]
+    private bool _isSelectedDayEmpty = true;
+
+    [ObservableProperty]
+    private bool _showTodayButton;
+
     public ObservableCollection<HeatmapDayCell> HeatmapDays { get; } = new();
     public ObservableCollection<string> HeatmapMonths { get; } = new();
+    public ObservableCollection<DayGamePlayItem> SelectedDayGames { get; } = new();
     public ObservableCollection<GamePlayStatItem> TopPlayedGames { get; } = new();
 
     partial void OnSelectedTimePeriodChanged(StatsTimePeriod value)
@@ -62,11 +80,13 @@ public partial class StatsViewModel : ObservableObject
     public async Task InitializeAsync(ElementTheme theme = ElementTheme.Default)
     {
         _currentTheme = theme;
+        _pinnedDate = null;
         _allSessions = await _trackerService.LoadSessionsAsync() ?? new List<PlaytimeSession>();
         _allGames = await _dataService.LoadGamesAsync() ?? new List<Game>();
 
         RecalculateStats();
         BuildRollingLastYearHeatmap();
+        SelectHeatmapDay(DateTime.Today, isFromHover: false);
     }
 
     public void RefreshHeatmapTheme(ElementTheme theme)
@@ -75,6 +95,93 @@ public partial class StatsViewModel : ObservableObject
         if (_allSessions.Count > 0 || HeatmapDays.Count > 0)
         {
             BuildRollingLastYearHeatmap();
+            SelectHeatmapDay(_inspectedDate, isFromHover: false);
+        }
+    }
+
+    public void SelectHeatmapDay(DateTime date, bool isFromHover = false)
+    {
+        DateTime targetDate = date.Date;
+
+        if (!isFromHover)
+        {
+            // Clicking the already-pinned day unpins back to Today; otherwise pins targetDate
+            _pinnedDate = (_pinnedDate.HasValue && _pinnedDate.Value == targetDate && targetDate != DateTime.Today)
+                ? DateTime.Today
+                : targetDate;
+
+            if (_pinnedDate.Value == DateTime.Today)
+            {
+                _pinnedDate = null;
+            }
+        }
+
+        _inspectedDate = targetDate;
+        ShowTodayButton = _inspectedDate != DateTime.Today;
+
+        bool isDark = _currentTheme == ElementTheme.Dark ||
+            (_currentTheme == ElementTheme.Default && Application.Current?.RequestedTheme == ApplicationTheme.Dark);
+
+        Brush highlightBrush = isDark
+            ? new SolidColorBrush(Color.FromArgb(95, 203, 213, 225))
+            : new SolidColorBrush(Color.FromArgb(105, 71, 85, 105));
+
+        var transparentBrush = new SolidColorBrush(Colors.Transparent);
+
+        foreach (var cell in HeatmapDays)
+        {
+            cell.SelectionBorderBrush = (cell.IsInSelectedYear && cell.Date == _inspectedDate)
+                ? highlightBrush
+                : transparentBrush;
+        }
+
+        SelectedDayTitle = _inspectedDate == DateTime.Today
+            ? "Today"
+            : _inspectedDate == DateTime.Today.AddDays(-1)
+                ? "Yesterday"
+                : _inspectedDate.ToString("MMM d, yyyy", CultureInfo.InvariantCulture);
+
+        SelectedDaySubtitle = _inspectedDate.ToString("dddd, MMM d, yyyy", CultureInfo.InvariantCulture);
+
+        var daySessions = _allSessions
+            .Where(s => s != null && s.Duration.TotalMinutes >= 1 && s.StartTime.Date == _inspectedDate)
+            .ToList();
+
+        SelectedDayGames.Clear();
+
+        if (daySessions.Count == 0)
+        {
+            SelectedDayTotalFormatted = "0 mins";
+            IsSelectedDayEmpty = true;
+            return;
+        }
+
+        double dayTotalMins = daySessions.Sum(s => s.Duration.TotalMinutes);
+        SelectedDayTotalFormatted = FormatPlaytime(dayTotalMins);
+        IsSelectedDayEmpty = false;
+
+        var groupedGames = daySessions
+            .GroupBy(s => s.GameTitle)
+            .Select(g =>
+            {
+                double mins = g.Sum(s => s.Duration.TotalMinutes);
+                var matchedGame = _allGames.FirstOrDefault(
+                    game => string.Equals(game.Title, g.Key, StringComparison.OrdinalIgnoreCase));
+
+                return new DayGamePlayItem
+                {
+                    Title = g.Key,
+                    Minutes = mins,
+                    PlaytimeFormatted = FormatPlaytime(mins),
+                    IconUrl = matchedGame?.IconUrl ?? string.Empty
+                };
+            })
+            .OrderByDescending(x => x.Minutes)
+            .ToList();
+
+        foreach (var item in groupedGames)
+        {
+            SelectedDayGames.Add(item);
         }
     }
 
@@ -308,7 +415,7 @@ public partial class StatsViewModel : ObservableObject
     }
 }
 
-public class HeatmapDayCell
+public partial class HeatmapDayCell : ObservableObject
 {
     public DateTime Date { get; set; }
     public double Minutes { get; set; }
@@ -316,6 +423,17 @@ public class HeatmapDayCell
     public Brush FillBrush { get; set; } = new SolidColorBrush(Colors.Transparent);
     public double CellOpacity { get; set; } = 1.0;
     public string TooltipText { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    private Brush _selectionBorderBrush = new SolidColorBrush(Colors.Transparent);
+}
+
+public class DayGamePlayItem
+{
+    public string Title { get; set; } = string.Empty;
+    public double Minutes { get; set; }
+    public string PlaytimeFormatted { get; set; } = "0 mins";
+    public string IconUrl { get; set; } = string.Empty;
 }
 
 public class GamePlayStatItem

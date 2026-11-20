@@ -111,80 +111,113 @@
                 </Border>
             </StackPanel>
 
-            <!-- Fixed Rolling Last-Year Playtime Heatmap -->
+            <!-- Rolling Last-Year Playtime Heatmap + Selected Day Breakdown -->
             <StackPanel Spacing="12">
                 <TextBlock Text="{x:Bind ViewModel.HeatmapSummaryText, Mode=OneWay}"
                            Style="{StaticResource BodyStrongTextBlockStyle}" />
 
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8"
-                        Padding="20,18">
-                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                                  VerticalScrollBarVisibility="Disabled"
-                                  HorizontalScrollMode="Auto"
-                                  VerticalScrollMode="Disabled">
-                        <StackPanel HorizontalAlignment="Center" Spacing="12">
+                <Grid x:Name="HeatmapSplitGrid" ColumnSpacing="16" RowSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition x:Name="HeatmapLeftCol" Width="*" />
+                        <ColumnDefinition x:Name="HeatmapRightCol" Width="320" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                            <!-- Rolling Month Labels aligned to 16px week columns + 4px gap -->
-                            <ItemsRepeater Margin="36,0,0,0"
-                                           ItemsSource="{x:Bind ViewModel.HeatmapMonths, Mode=OneWay}">
-                                <ItemsRepeater.Layout>
-                                    <StackLayout Orientation="Horizontal" Spacing="4" />
-                                </ItemsRepeater.Layout>
-                                <ItemsRepeater.ItemTemplate>
-                                    <DataTemplate x:DataType="x:String">
-                                        <TextBlock Text="{x:Bind}"
-                                                   MinWidth="16"
-                                                   FontSize="11"
-                                                   TextTrimming="None"
-                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    </DataTemplate>
-                                </ItemsRepeater.ItemTemplate>
-                            </ItemsRepeater>
+                    <!-- Left: Heatmap Card (Aligned Far Left) -->
+                    <Border x:Name="HeatmapCard"
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="20,18">
+                        <Grid RowSpacing="12">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
 
-                            <!-- Day Labels + 7-Row Heatmap Grid -->
-                            <Grid>
+                            <!-- Top Area: Fixed Day Labels (Left) + Horizontally Scrolling Months & Cells (Right) -->
+                            <Grid Grid.Row="0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="36" />
-                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Mon / Wed / Fri Labels aligned to 16px cells + 4px gap -->
-                                <StackPanel Grid.Column="0" Spacing="4" VerticalAlignment="Top">
-                                    <TextBlock Height="16" />
-                                    <TextBlock Text="Mon" Height="16" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
-                                    <TextBlock Height="16" />
-                                    <TextBlock Text="Wed" Height="16" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
-                                    <TextBlock Height="16" />
-                                    <TextBlock Text="Fri" Height="16" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
-                                    <TextBlock Height="16" />
+                                <!-- Fixed Mon / Wed / Fri Labels aligned to 17px cells + 4px gap -->
+                                <StackPanel Grid.Column="0" Margin="0,27,0,0" Spacing="4" VerticalAlignment="Top">
+                                    <TextBlock Height="17" />
+                                    <TextBlock Text="Mon" Height="17" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Height="17" />
+                                    <TextBlock Text="Wed" Height="17" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Height="17" />
+                                    <TextBlock Text="Fri" Height="17" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Height="17" />
                                 </StackPanel>
 
-                                <ItemsRepeater Grid.Column="1"
-                                               ItemsSource="{x:Bind ViewModel.HeatmapDays, Mode=OneWay}">
-                                    <ItemsRepeater.Layout>
-                                        <UniformGridLayout Orientation="Vertical"
-                                                           MaximumRowsOrColumns="7"
-                                                           MinRowSpacing="4"
-                                                           MinColumnSpacing="4" />
-                                    </ItemsRepeater.Layout>
-                                    <ItemsRepeater.ItemTemplate>
-                                        <DataTemplate x:DataType="viewmodels:HeatmapDayCell">
-                                            <Border Width="16"
-                                                    Height="16"
-                                                    CornerRadius="3"
-                                                    Background="{x:Bind FillBrush}"
-                                                    Opacity="{x:Bind CellOpacity}"
-                                                    ToolTipService.ToolTip="{x:Bind TooltipText}" />
-                                        </DataTemplate>
-                                    </ItemsRepeater.ItemTemplate>
-                                </ItemsRepeater>
+                                <!-- Scrolling Months + Heatmap Grid -->
+                                <ScrollViewer x:Name="HeatmapHorizontalScrollViewer"
+                                              Grid.Column="1"
+                                              HorizontalScrollBarVisibility="Auto"
+                                              VerticalScrollBarVisibility="Disabled"
+                                              HorizontalScrollMode="Auto"
+                                              VerticalScrollMode="Disabled"
+                                              ViewChanged="OnHeatmapHorizontalViewChanged">
+                                    <StackPanel HorizontalAlignment="Left" Spacing="12">
+
+                                        <!-- Rolling Month Labels (scrolls with heatmap columns) -->
+                                        <ItemsRepeater HorizontalAlignment="Left"
+                                                       ItemsSource="{x:Bind ViewModel.HeatmapMonths, Mode=OneWay}">
+                                            <ItemsRepeater.Layout>
+                                                <StackLayout Orientation="Horizontal" Spacing="4" />
+                                            </ItemsRepeater.Layout>
+                                            <ItemsRepeater.ItemTemplate>
+                                                <DataTemplate x:DataType="x:String">
+                                                    <TextBlock Text="{x:Bind}"
+                                                               MinWidth="17"
+                                                               FontSize="11"
+                                                               TextTrimming="None"
+                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                </DataTemplate>
+                                            </ItemsRepeater.ItemTemplate>
+                                        </ItemsRepeater>
+
+                                        <!-- 7-Row Heatmap Grid -->
+                                        <ItemsRepeater HorizontalAlignment="Left"
+                                                       ItemsSource="{x:Bind ViewModel.HeatmapDays, Mode=OneWay}">
+                                            <ItemsRepeater.Layout>
+                                                <UniformGridLayout Orientation="Vertical"
+                                                                   MaximumRowsOrColumns="7"
+                                                                   MinRowSpacing="4"
+                                                                   MinColumnSpacing="4" />
+                                            </ItemsRepeater.Layout>
+                                            <ItemsRepeater.ItemTemplate>
+                                                <DataTemplate x:DataType="viewmodels:HeatmapDayCell">
+                                                    <Border Width="17"
+                                                            Height="17"
+                                                            CornerRadius="3"
+                                                            Background="{x:Bind FillBrush}"
+                                                            BorderBrush="{x:Bind SelectionBorderBrush, Mode=OneWay}"
+                                                            BorderThickness="1"
+                                                            Opacity="{x:Bind CellOpacity}"
+                                                            Tag="{x:Bind}"
+                                                            PointerEntered="OnHeatmapCellPointerEntered"
+                                                            Tapped="OnHeatmapCellTapped"
+                                                            ToolTipService.ToolTip="{x:Bind TooltipText}" />
+                                                </DataTemplate>
+                                            </ItemsRepeater.ItemTemplate>
+                                        </ItemsRepeater>
+
+                                    </StackPanel>
+                                </ScrollViewer>
                             </Grid>
 
-                            <!-- Footer Legend -->
-                            <Grid Margin="36,4,0,0">
+                            <!-- Fixed Footer Legend (stays anchored at bottom during horizontal scroll) -->
+                            <Grid Grid.Row="1" Margin="36,4,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -194,9 +227,10 @@
                                            Text="Daily playtime intensity (past 12 months)"
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           VerticalAlignment="Center" />
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" />
 
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" Margin="16,0,0,0">
                                     <TextBlock Text="Less" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,0,2,0" VerticalAlignment="Center" />
                                     <Border Width="13" Height="13" CornerRadius="3" Background="{ThemeResource CardStrokeColorDefaultBrush}" />
                                     <Border Width="13" Height="13" CornerRadius="3" Background="{ThemeResource SystemAccentColorDark2}" Opacity="0.55" />
@@ -207,9 +241,128 @@
                                 </StackPanel>
                             </Grid>
 
-                        </StackPanel>
-                    </ScrollViewer>
-                </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- Right: Selected / Inspected Day Games List -->
+                    <Border x:Name="DayDetailsCard"
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="18,16">
+                        <Grid RowSpacing="12">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Selected Date, Today Shortcut & Total Time Header -->
+                            <Grid Grid.Row="0" ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <TextBlock Text="{x:Bind ViewModel.SelectedDayTitle, Mode=OneWay}"
+                                               Style="{StaticResource BodyStrongTextBlockStyle}"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{x:Bind ViewModel.SelectedDaySubtitle, Mode=OneWay}"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <Button Content="Today"
+                                            Click="OnResetToTodayClicked"
+                                            Visibility="{x:Bind ViewModel.ShowTodayButton, Mode=OneWay}"
+                                            Padding="8,3"
+                                            FontSize="11" />
+
+                                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                            CornerRadius="6"
+                                            Padding="8,4">
+                                        <TextBlock Text="{x:Bind ViewModel.SelectedDayTotalFormatted, Mode=OneWay}"
+                                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                                   FontWeight="SemiBold" />
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Games Played List -->
+                            <ScrollViewer Grid.Row="1"
+                                          MaxHeight="185"
+                                          VerticalScrollBarVisibility="Auto">
+                                <ItemsRepeater ItemsSource="{x:Bind ViewModel.SelectedDayGames, Mode=OneWay}">
+                                    <ItemsRepeater.Layout>
+                                        <StackLayout Spacing="8" />
+                                    </ItemsRepeater.Layout>
+                                    <ItemsRepeater.ItemTemplate>
+                                        <DataTemplate x:DataType="viewmodels:DayGamePlayItem">
+                                            <Grid Padding="10,8"
+                                                  CornerRadius="6"
+                                                  Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                                  ColumnSpacing="10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <Grid Grid.Column="0"
+                                                      Width="28"
+                                                      Height="28"
+                                                      CornerRadius="5"
+                                                      Background="{ThemeResource LayerOnAcrylicFillColorDefaultBrush}">
+                                                    <FontIcon Glyph="&#xE7FC;" FontSize="13" Opacity="0.5" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    <Image Source="{x:Bind IconUrl, Converter={StaticResource StringToImageConverter}}" Stretch="UniformToFill" />
+                                                </Grid>
+
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{x:Bind Title}"
+                                                           VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Style="{StaticResource BodyTextBlockStyle}" />
+
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{x:Bind PlaytimeFormatted}"
+                                                           VerticalAlignment="Center"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+                            </ScrollViewer>
+
+                            <!-- Empty Day Placeholder -->
+                            <StackPanel Grid.Row="1"
+                                        Visibility="{x:Bind ViewModel.IsSelectedDayEmpty, Mode=OneWay}"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Spacing="6"
+                                        Padding="0,24">
+                                <FontIcon Glyph="&#xE787;"
+                                          FontSize="22"
+                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                          Opacity="0.6"
+                                          HorizontalAlignment="Center" />
+                                <TextBlock Text="No playtime recorded"
+                                           Style="{StaticResource BodyStrongTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           HorizontalAlignment="Center" />
+                                <TextBlock Text="Hover or click any square on the heatmap to inspect that day."
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
             </StackPanel>
 
             <!-- Top Played Leaderboard -->
