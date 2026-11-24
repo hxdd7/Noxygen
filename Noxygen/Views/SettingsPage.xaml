@@ -14,7 +14,6 @@
             <TextBlock Text="Settings" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,24"/>
 
             <!-- Appearance and behavior Section -->
-            <!-- Appearance and behavior Section -->
             <TextBlock Text="Appearance and behavior" 
                        Style="{StaticResource BodyStrongTextBlockStyle}" 
                        Margin="0,0,0,8"/>
@@ -25,7 +24,7 @@
                     Header="App Theme"
                     Description="Select which app theme to display">
                     <labs:SettingsCard.HeaderIcon>
-                        <FontIcon Glyph="" />
+                        <FontIcon Glyph="&#xE790;" />
                     </labs:SettingsCard.HeaderIcon>
 
                     <ComboBox 
@@ -42,7 +41,7 @@
                     Header="Taskbar Jump List Content"
                     Description="Choose whether to show your pinned library games or recent play history">
                     <labs:SettingsCard.HeaderIcon>
-                        <FontIcon Glyph="" />
+                        <FontIcon Glyph="&#xE71D;" />
                     </labs:SettingsCard.HeaderIcon>
 
                     <ComboBox 
@@ -57,14 +56,49 @@
                 <labs:SettingsCard 
                     Header="Scan Game Launchers"
                     Description="Detect installed clients (Steam, Epic, GOG, Riot, EA, Ubisoft) and pin them to the sidebar">
-                                    <labs:SettingsCard.HeaderIcon>
-                                        <FontIcon Glyph="&#xE72C;" />
-                                    </labs:SettingsCard.HeaderIcon>
+                    <labs:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE72C;" />
+                    </labs:SettingsCard.HeaderIcon>
 
-                                    <Button 
-                                        Content="Scan Launchers" 
-                                        Command="{x:Bind ViewModel.ScanLaunchersCommand}"
-                                        Width="180" />
+                    <Button 
+                        Content="Scan Launchers" 
+                        Command="{x:Bind ViewModel.ScanLaunchersCommand}"
+                        Width="180" />
+                </labs:SettingsCard>
+            </StackPanel>
+
+            <!-- Data and backup Section -->
+            <TextBlock Text="Data and backup" 
+                       Style="{StaticResource BodyStrongTextBlockStyle}" 
+                       Margin="0,0,0,8"/>
+
+            <StackPanel Spacing="4" Margin="0,0,0,24">
+                <!-- Export Playtime Data -->
+                <labs:SettingsCard 
+                    Header="Export Playtime Data"
+                    Description="Save your recorded play sessions to a JSON backup file">
+                    <labs:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xEDE1;" />
+                    </labs:SettingsCard.HeaderIcon>
+
+                    <Button 
+                        Content="Export Data" 
+                        Command="{x:Bind ViewModel.ExportPlaytimeCommand}"
+                        Width="180" />
+                </labs:SettingsCard>
+
+                <!-- Import Playtime Data -->
+                <labs:SettingsCard 
+                    Header="Import Playtime Data"
+                    Description="Merge play sessions from a previously exported JSON backup file">
+                    <labs:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE8B5;" />
+                    </labs:SettingsCard.HeaderIcon>
+
+                    <Button 
+                        Content="Import Data" 
+                        Command="{x:Bind ViewModel.ImportPlaytimeCommand}"
+                        Width="180" />
                 </labs:SettingsCard>
             </StackPanel>
 

@@ -239,6 +239,7 @@ public partial class MainWindow : Window
             {
                 "LibraryPage" => typeof(LibraryPage),
                 "StatsPage" => typeof(StatsPage),
+                "SystemInfoPage" => typeof(SystemInfoPage),
                 _ => null
             };
 

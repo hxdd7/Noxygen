@@ -13,7 +13,7 @@
         <converters:StringToImageSourceConverter x:Key="StringToImageConverter" />
     </Page.Resources>
 
-    <ScrollViewer Padding="20">
+    <ScrollViewer Padding="36">
         <StackPanel Spacing="24">
 
             <!-- Header + Time Period Dropdown -->
@@ -42,7 +42,7 @@
                 </ComboBox>
             </Grid>
 
-            <!-- Wide Layout: 4 Cards Side-by-Side -->
+            <!-- Wide Layout: 4 Summary Cards Side-by-Side -->
             <Grid x:Name="SummaryCardsWideGrid" ColumnSpacing="16">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -51,28 +51,28 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="16">
+                <Border Grid.Column="0" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
                     <StackPanel Spacing="4">
                         <TextBlock Text="Total Playtime" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" TextTrimming="CharacterEllipsis" />
                         <TextBlock Text="{x:Bind ViewModel.TotalPlaytimeFormatted, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" MaxLines="1" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="16">
+                <Border Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
                     <StackPanel Spacing="4">
-                        <TextBlock Text="Most Played (Period)" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="Average Daily" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{x:Bind ViewModel.AverageDailyFormatted, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Most Played" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" TextTrimming="CharacterEllipsis" />
                         <TextBlock Text="{x:Bind ViewModel.PeriodFavoriteGameTitle, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" MaxLines="1" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="2" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="16">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="All-Time Favorite" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Text="{x:Bind ViewModel.FavoriteGameTitle, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" MaxLines="1" TextTrimming="CharacterEllipsis" />
-                    </StackPanel>
-                </Border>
-
-                <Border Grid.Column="3" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="16">
+                <Border Grid.Column="3" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
                     <StackPanel Spacing="4">
                         <TextBlock Text="Recorded Sessions" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" MaxLines="1" TextTrimming="CharacterEllipsis" />
                         <TextBlock Text="{x:Bind ViewModel.TotalSessionsCount, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" MaxLines="1" TextTrimming="CharacterEllipsis" />
@@ -80,30 +80,30 @@
                 </Border>
             </Grid>
 
-            <!-- Narrow Layout: 4 Cards Stacked Vertically -->
+            <!-- Narrow Layout: 4 Summary Cards Stacked Vertically -->
             <StackPanel x:Name="SummaryCardsNarrowStack" Spacing="10" Visibility="Collapsed">
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="16">
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
                     <StackPanel Spacing="4">
                         <TextBlock Text="Total Playtime" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                         <TextBlock Text="{x:Bind ViewModel.TotalPlaytimeFormatted, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" />
                     </StackPanel>
                 </Border>
 
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="16">
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
                     <StackPanel Spacing="4">
-                        <TextBlock Text="Most Played (Period)" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Text="Average Daily" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Text="{x:Bind ViewModel.AverageDailyFormatted, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" />
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Most Played" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                         <TextBlock Text="{x:Bind ViewModel.PeriodFavoriteGameTitle, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" />
                     </StackPanel>
                 </Border>
 
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="16">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="All-Time Favorite" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                        <TextBlock Text="{x:Bind ViewModel.FavoriteGameTitle, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" />
-                    </StackPanel>
-                </Border>
-
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="16">
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
                     <StackPanel Spacing="4">
                         <TextBlock Text="Recorded Sessions" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                         <TextBlock Text="{x:Bind ViewModel.TotalSessionsCount, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" />
@@ -111,301 +111,578 @@
                 </Border>
             </StackPanel>
 
-            <!-- Rolling Last-Year Playtime Heatmap + Selected Day Breakdown -->
-            <StackPanel Spacing="12">
-                <TextBlock Text="{x:Bind ViewModel.HeatmapSummaryText, Mode=OneWay}"
-                           Style="{StaticResource BodyStrongTextBlockStyle}" />
+            <!-- Playtime Activity (Weekday Bar Chart) + Session Insights -->
+            <Grid x:Name="ActivityInsightsGrid" ColumnSpacing="16" RowSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="ActivityLeftCol" Width="*" />
+                    <ColumnDefinition x:Name="ActivityRightCol" Width="320" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-                <Grid x:Name="HeatmapSplitGrid" ColumnSpacing="16" RowSpacing="16">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition x:Name="HeatmapLeftCol" Width="*" />
-                        <ColumnDefinition x:Name="HeatmapRightCol" Width="320" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+                <!-- Left: Playtime Activity by Day of Week -->
+                <Border x:Name="WeekdayActivityCard"
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="20,18">
+                    <Grid RowSpacing="14">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-                    <!-- Left: Heatmap Card (Aligned Far Left) -->
-                    <Border x:Name="HeatmapCard"
-                            Grid.Row="0"
-                            Grid.Column="0"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="20,18">
-                        <Grid RowSpacing="12">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-
-                            <!-- Top Area: Fixed Day Labels (Left) + Horizontally Scrolling Months & Cells (Right) -->
-                            <Grid Grid.Row="0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="36" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-
-                                <!-- Fixed Mon / Wed / Fri Labels aligned to 17px cells + 4px gap -->
-                                <StackPanel Grid.Column="0" Margin="0,27,0,0" Spacing="4" VerticalAlignment="Top">
-                                    <TextBlock Height="17" />
-                                    <TextBlock Text="Mon" Height="17" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
-                                    <TextBlock Height="17" />
-                                    <TextBlock Text="Wed" Height="17" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
-                                    <TextBlock Height="17" />
-                                    <TextBlock Text="Fri" Height="17" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
-                                    <TextBlock Height="17" />
-                                </StackPanel>
-
-                                <!-- Scrolling Months + Heatmap Grid -->
-                                <ScrollViewer x:Name="HeatmapHorizontalScrollViewer"
-                                              Grid.Column="1"
-                                              HorizontalScrollBarVisibility="Auto"
-                                              VerticalScrollBarVisibility="Disabled"
-                                              HorizontalScrollMode="Auto"
-                                              VerticalScrollMode="Disabled"
-                                              ViewChanged="OnHeatmapHorizontalViewChanged">
-                                    <StackPanel HorizontalAlignment="Left" Spacing="12">
-
-                                        <!-- Rolling Month Labels (scrolls with heatmap columns) -->
-                                        <ItemsRepeater HorizontalAlignment="Left"
-                                                       ItemsSource="{x:Bind ViewModel.HeatmapMonths, Mode=OneWay}">
-                                            <ItemsRepeater.Layout>
-                                                <StackLayout Orientation="Horizontal" Spacing="4" />
-                                            </ItemsRepeater.Layout>
-                                            <ItemsRepeater.ItemTemplate>
-                                                <DataTemplate x:DataType="x:String">
-                                                    <TextBlock Text="{x:Bind}"
-                                                               MinWidth="17"
-                                                               FontSize="11"
-                                                               TextTrimming="None"
-                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                                </DataTemplate>
-                                            </ItemsRepeater.ItemTemplate>
-                                        </ItemsRepeater>
-
-                                        <!-- 7-Row Heatmap Grid -->
-                                        <ItemsRepeater HorizontalAlignment="Left"
-                                                       ItemsSource="{x:Bind ViewModel.HeatmapDays, Mode=OneWay}">
-                                            <ItemsRepeater.Layout>
-                                                <UniformGridLayout Orientation="Vertical"
-                                                                   MaximumRowsOrColumns="7"
-                                                                   MinRowSpacing="4"
-                                                                   MinColumnSpacing="4" />
-                                            </ItemsRepeater.Layout>
-                                            <ItemsRepeater.ItemTemplate>
-                                                <DataTemplate x:DataType="viewmodels:HeatmapDayCell">
-                                                    <Border Width="17"
-                                                            Height="17"
-                                                            CornerRadius="3"
-                                                            Background="{x:Bind FillBrush}"
-                                                            BorderBrush="{x:Bind SelectionBorderBrush, Mode=OneWay}"
-                                                            BorderThickness="1"
-                                                            Opacity="{x:Bind CellOpacity}"
-                                                            Tag="{x:Bind}"
-                                                            PointerEntered="OnHeatmapCellPointerEntered"
-                                                            Tapped="OnHeatmapCellTapped"
-                                                            ToolTipService.ToolTip="{x:Bind TooltipText}" />
-                                                </DataTemplate>
-                                            </ItemsRepeater.ItemTemplate>
-                                        </ItemsRepeater>
-
-                                    </StackPanel>
-                                </ScrollViewer>
-                            </Grid>
-
-                            <!-- Fixed Footer Legend (stays anchored at bottom during horizontal scroll) -->
-                            <Grid Grid.Row="1" Margin="36,4,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <TextBlock Grid.Column="0"
-                                           Text="Daily playtime intensity (past 12 months)"
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock Text="Playtime Activity" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <TextBlock Text="Distribution by day of week for selected period"
                                            Style="{StaticResource CaptionTextBlockStyle}"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           VerticalAlignment="Center"
-                                           TextTrimming="CharacterEllipsis" />
-
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" Margin="16,0,0,0">
-                                    <TextBlock Text="Less" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,0,2,0" VerticalAlignment="Center" />
-                                    <Border Width="13" Height="13" CornerRadius="3" Background="{ThemeResource CardStrokeColorDefaultBrush}" />
-                                    <Border Width="13" Height="13" CornerRadius="3" Background="{ThemeResource SystemAccentColorDark2}" Opacity="0.55" />
-                                    <Border Width="13" Height="13" CornerRadius="3" Background="{ThemeResource SystemAccentColorDark1}" Opacity="0.78" />
-                                    <Border Width="13" Height="13" CornerRadius="3" Background="{ThemeResource SystemAccentColor}" Opacity="0.9" />
-                                    <Border Width="13" Height="13" CornerRadius="3" Background="{ThemeResource SystemAccentColorLight1}" />
-                                    <TextBlock Text="More" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="2,0,0,0" VerticalAlignment="Center" />
-                                </StackPanel>
-                            </Grid>
-
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="1"
+                                       Text="{x:Bind ViewModel.PeakWeekdayText, Mode=OneWay}"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       VerticalAlignment="Center" />
                         </Grid>
-                    </Border>
 
-                    <!-- Right: Selected / Inspected Day Games List -->
-                    <Border x:Name="DayDetailsCard"
-                            Grid.Row="0"
-                            Grid.Column="1"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="18,16">
-                        <Grid RowSpacing="12">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
+                        <!-- 7 Weekday Columns -->
+                        <Grid Grid.Row="1" ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
 
-                            <!-- Selected Date, Today Shortcut & Total Time Header -->
-                            <Grid Grid.Row="0" ColumnSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0" Spacing="2">
-                                    <TextBlock Text="{x:Bind ViewModel.SelectedDayTitle, Mode=OneWay}"
-                                               Style="{StaticResource BodyStrongTextBlockStyle}"
-                                               TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Text="{x:Bind ViewModel.SelectedDaySubtitle, Mode=OneWay}"
-                                               Style="{StaticResource CaptionTextBlockStyle}"
-                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                </StackPanel>
-
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                    <Button Content="Today"
-                                            Click="OnResetToTodayClicked"
-                                            Visibility="{x:Bind ViewModel.ShowTodayButton, Mode=OneWay}"
-                                            Padding="8,3"
-                                            FontSize="11" />
-
-                                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                            <!-- Mon -->
+                            <StackPanel Grid.Column="0" Spacing="6" HorizontalAlignment="Stretch">
+                                <Border Height="112" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6">
+                                    <Border Height="{x:Bind ViewModel.WeekdayBars[0].BarHeight, Mode=OneWay}"
+                                            VerticalAlignment="Bottom"
                                             CornerRadius="6"
-                                            Padding="8,4">
-                                        <TextBlock Text="{x:Bind ViewModel.SelectedDayTotalFormatted, Mode=OneWay}"
-                                                   Style="{StaticResource CaptionTextBlockStyle}"
-                                                   FontWeight="SemiBold" />
-                                    </Border>
-                                </StackPanel>
-                            </Grid>
+                                            Background="{ThemeResource AccentFillColorDefaultBrush}" />
+                                </Border>
+                                <TextBlock Text="Mon" FontSize="11" HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
 
-                            <!-- Games Played List -->
-                            <ScrollViewer Grid.Row="1"
-                                          MaxHeight="185"
-                                          VerticalScrollBarVisibility="Auto">
-                                <ItemsRepeater ItemsSource="{x:Bind ViewModel.SelectedDayGames, Mode=OneWay}">
-                                    <ItemsRepeater.Layout>
-                                        <StackLayout Spacing="8" />
-                                    </ItemsRepeater.Layout>
-                                    <ItemsRepeater.ItemTemplate>
-                                        <DataTemplate x:DataType="viewmodels:DayGamePlayItem">
-                                            <Grid Padding="10,8"
-                                                  CornerRadius="6"
-                                                  Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                                  ColumnSpacing="10">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
+                            <!-- Tue -->
+                            <StackPanel Grid.Column="1" Spacing="6" HorizontalAlignment="Stretch">
+                                <Border Height="112" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6">
+                                    <Border Height="{x:Bind ViewModel.WeekdayBars[1].BarHeight, Mode=OneWay}"
+                                            VerticalAlignment="Bottom"
+                                            CornerRadius="6"
+                                            Background="{ThemeResource AccentFillColorDefaultBrush}" />
+                                </Border>
+                                <TextBlock Text="Tue" FontSize="11" HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
 
-                                                <Grid Grid.Column="0"
-                                                      Width="28"
-                                                      Height="28"
-                                                      CornerRadius="5"
-                                                      Background="{ThemeResource LayerOnAcrylicFillColorDefaultBrush}">
-                                                    <FontIcon Glyph="&#xE7FC;" FontSize="13" Opacity="0.5" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                                    <Image Source="{x:Bind IconUrl, Converter={StaticResource StringToImageConverter}}" Stretch="UniformToFill" />
-                                                </Grid>
+                            <!-- Wed -->
+                            <StackPanel Grid.Column="2" Spacing="6" HorizontalAlignment="Stretch">
+                                <Border Height="112" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6">
+                                    <Border Height="{x:Bind ViewModel.WeekdayBars[2].BarHeight, Mode=OneWay}"
+                                            VerticalAlignment="Bottom"
+                                            CornerRadius="6"
+                                            Background="{ThemeResource AccentFillColorDefaultBrush}" />
+                                </Border>
+                                <TextBlock Text="Wed" FontSize="11" HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
 
-                                                <TextBlock Grid.Column="1"
-                                                           Text="{x:Bind Title}"
-                                                           VerticalAlignment="Center"
-                                                           TextTrimming="CharacterEllipsis"
-                                                           Style="{StaticResource BodyTextBlockStyle}" />
+                            <!-- Thu -->
+                            <StackPanel Grid.Column="3" Spacing="6" HorizontalAlignment="Stretch">
+                                <Border Height="112" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6">
+                                    <Border Height="{x:Bind ViewModel.WeekdayBars[3].BarHeight, Mode=OneWay}"
+                                            VerticalAlignment="Bottom"
+                                            CornerRadius="6"
+                                            Background="{ThemeResource AccentFillColorDefaultBrush}" />
+                                </Border>
+                                <TextBlock Text="Thu" FontSize="11" HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
 
-                                                <TextBlock Grid.Column="2"
-                                                           Text="{x:Bind PlaytimeFormatted}"
-                                                           VerticalAlignment="Center"
-                                                           FontWeight="SemiBold"
-                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsRepeater.ItemTemplate>
-                                </ItemsRepeater>
-                            </ScrollViewer>
+                            <!-- Fri -->
+                            <StackPanel Grid.Column="4" Spacing="6" HorizontalAlignment="Stretch">
+                                <Border Height="112" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6">
+                                    <Border Height="{x:Bind ViewModel.WeekdayBars[4].BarHeight, Mode=OneWay}"
+                                            VerticalAlignment="Bottom"
+                                            CornerRadius="6"
+                                            Background="{ThemeResource AccentFillColorDefaultBrush}" />
+                                </Border>
+                                <TextBlock Text="Fri" FontSize="11" HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
 
-                            <!-- Empty Day Placeholder -->
-                            <StackPanel Grid.Row="1"
-                                        Visibility="{x:Bind ViewModel.IsSelectedDayEmpty, Mode=OneWay}"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        Spacing="6"
-                                        Padding="0,24">
-                                <FontIcon Glyph="&#xE787;"
-                                          FontSize="22"
-                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                          Opacity="0.6"
-                                          HorizontalAlignment="Center" />
-                                <TextBlock Text="No playtime recorded"
-                                           Style="{StaticResource BodyStrongTextBlockStyle}"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           HorizontalAlignment="Center" />
-                                <TextBlock Text="Hover or click any square on the heatmap to inspect that day."
-                                           Style="{StaticResource CaptionTextBlockStyle}"
-                                           Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                           TextWrapping="Wrap"
-                                           TextAlignment="Center" />
+                            <!-- Sat -->
+                            <StackPanel Grid.Column="5" Spacing="6" HorizontalAlignment="Stretch">
+                                <Border Height="112" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6">
+                                    <Border Height="{x:Bind ViewModel.WeekdayBars[5].BarHeight, Mode=OneWay}"
+                                            VerticalAlignment="Bottom"
+                                            CornerRadius="6"
+                                            Background="{ThemeResource AccentFillColorDefaultBrush}" />
+                                </Border>
+                                <TextBlock Text="Sat" FontSize="11" HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+
+                            <!-- Sun -->
+                            <StackPanel Grid.Column="6" Spacing="6" HorizontalAlignment="Stretch">
+                                <Border Height="112" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6">
+                                    <Border Height="{x:Bind ViewModel.WeekdayBars[6].BarHeight, Mode=OneWay}"
+                                            VerticalAlignment="Bottom"
+                                            CornerRadius="6"
+                                            Background="{ThemeResource AccentFillColorDefaultBrush}" />
+                                </Border>
+                                <TextBlock Text="Sun" FontSize="11" HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                             </StackPanel>
                         </Grid>
-                    </Border>
-                </Grid>
-            </StackPanel>
 
-            <!-- Top Played Leaderboard -->
-            <StackPanel Spacing="12">
-                <TextBlock Text="Playtime Leaderboard" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock Grid.Row="2"
+                                   Text="{x:Bind ViewModel.WeekdayScaleText, Mode=OneWay}"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                    </Grid>
+                </Border>
 
-                <ListView ItemsSource="{x:Bind ViewModel.TopPlayedGames, Mode=OneWay}"
-                          SelectionMode="None">
-                    <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="Padding" Value="0" />
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        </Style>
-                    </ListView.ItemContainerStyle>
+                <!-- Right: Session Insights Card -->
+                <Border x:Name="SessionInsightsCard"
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="18,16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Session Insights" Style="{StaticResource BodyStrongTextBlockStyle}" />
 
-                    <ListView.ItemTemplate>
-                        <DataTemplate x:DataType="viewmodels:GamePlayStatItem">
-                            <Grid Height="56" Padding="0,4">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="{x:Bind ViewModel.AverageSessionFormatted, Mode=OneWay}"
+                                       Style="{StaticResource SubtitleTextBlockStyle}"
+                                       FontWeight="Bold" />
+                            <TextBlock Text="Average session"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
 
-                                <!-- Game Info (Icon + Title) -->
-                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                                    <Grid Width="36" Height="36" CornerRadius="6" Background="{ThemeResource LayerOnAcrylicFillColorDefaultBrush}">
-                                        <FontIcon Glyph="&#xE7FC;" FontSize="16" Opacity="0.5" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        <Image Source="{x:Bind IconUrl, Mode=OneWay, Converter={StaticResource StringToImageConverter}}" Stretch="UniformToFill" />
+                        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" />
+
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="{x:Bind ViewModel.LongestSessionFormatted, Mode=OneWay}"
+                                       Style="{StaticResource SubtitleTextBlockStyle}"
+                                       FontWeight="Bold" />
+                            <TextBlock Text="Longest session"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+
+                        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" />
+
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="{x:Bind ViewModel.GamingStreakFormatted, Mode=OneWay}"
+                                       Style="{StaticResource SubtitleTextBlockStyle}"
+                                       FontWeight="Bold" />
+                            <TextBlock Text="Current gaming streak"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Rolling Last-Year Playtime Heatmap + Selected Day Breakdown (Tight Fixed Height Both Panels) -->
+            <Grid x:Name="HeatmapSplitGrid" ColumnSpacing="16" RowSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="HeatmapLeftCol" Width="*" />
+                    <ColumnDefinition x:Name="HeatmapRightCol" Width="320" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Left: Heatmap Card (Tight Fixed Height + Non-Overlapping ScrollBar) -->
+                <Border x:Name="HeatmapCard"
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Height="242"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="20,16">
+                    <Grid RowSpacing="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Fixed Day Labels (Left) + Horizontally Scrolling Months & Cells (Right) -->
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="36" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Margin="0,25,0,0" Spacing="4" VerticalAlignment="Top">
+                                <TextBlock Height="17" />
+                                <TextBlock Text="Mon" Height="17" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                <TextBlock Height="17" />
+                                <TextBlock Text="Wed" Height="17" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                <TextBlock Height="17" />
+                                <TextBlock Text="Fri" Height="17" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                <TextBlock Height="17" />
+                            </StackPanel>
+
+                            <ScrollViewer x:Name="HeatmapHorizontalScrollViewer"
+                                          Grid.Column="1"
+                                          HorizontalScrollBarVisibility="Hidden"
+                                          VerticalScrollBarVisibility="Disabled"
+                                          HorizontalScrollMode="Auto"
+                                          VerticalScrollMode="Disabled"
+                                          ViewChanged="OnHeatmapHorizontalViewChanged">
+                                <StackPanel HorizontalAlignment="Left" Spacing="10">
+
+                                    <ItemsRepeater HorizontalAlignment="Left"
+                                                   ItemsSource="{x:Bind ViewModel.HeatmapMonths, Mode=OneWay}">
+                                        <ItemsRepeater.Layout>
+                                            <StackLayout Orientation="Horizontal" Spacing="4" />
+                                        </ItemsRepeater.Layout>
+                                        <ItemsRepeater.ItemTemplate>
+                                            <DataTemplate x:DataType="x:String">
+                                                <TextBlock Text="{x:Bind}"
+                                                           MinWidth="17"
+                                                           FontSize="11"
+                                                           TextTrimming="None"
+                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            </DataTemplate>
+                                        </ItemsRepeater.ItemTemplate>
+                                    </ItemsRepeater>
+
+                                    <ItemsRepeater HorizontalAlignment="Left"
+                                                   ItemsSource="{x:Bind ViewModel.HeatmapDays, Mode=OneWay}">
+                                        <ItemsRepeater.Layout>
+                                            <UniformGridLayout Orientation="Vertical"
+                                                               MaximumRowsOrColumns="7"
+                                                               MinRowSpacing="4"
+                                                               MinColumnSpacing="4" />
+                                        </ItemsRepeater.Layout>
+                                        <ItemsRepeater.ItemTemplate>
+                                            <DataTemplate x:DataType="viewmodels:HeatmapDayCell">
+                                                <Border Width="17"
+                                                        Height="17"
+                                                        CornerRadius="3"
+                                                        Background="{x:Bind FillBrush}"
+                                                        BorderBrush="{x:Bind SelectionBorderBrush, Mode=OneWay}"
+                                                        BorderThickness="1"
+                                                        Opacity="{x:Bind CellOpacity}"
+                                                        Tag="{x:Bind}"
+                                                        PointerEntered="OnHeatmapCellPointerEntered"
+                                                        Tapped="OnHeatmapCellTapped"
+                                                        ToolTipService.ToolTip="{x:Bind TooltipText}" />
+                                            </DataTemplate>
+                                        </ItemsRepeater.ItemTemplate>
+                                    </ItemsRepeater>
+
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+
+                        <!-- Dedicated Horizontal ScrollBar Below Bottom Row (No Dead Space When Collapsed) -->
+                        <ScrollBar x:Name="HeatmapHorizontalScrollBar"
+                                   Grid.Row="1"
+                                   Orientation="Horizontal"
+                                   Margin="36,8,0,0"
+                                   Scroll="OnHeatmapHorizontalScrollBarScroll" />
+
+                        <!-- Fixed Footer Legend -->
+                        <Grid Grid.Row="2" Margin="36,10,0,0" VerticalAlignment="Bottom">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Text="Daily playtime intensity (past 12 months)"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" />
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" Margin="16,0,0,0">
+                                <TextBlock Text="Less" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,0,2,0" VerticalAlignment="Center" />
+                                <Border Width="13" Height="13" CornerRadius="3" Background="{ThemeResource CardStrokeColorDefaultBrush}" />
+                                <Border Width="13" Height="13" CornerRadius="3" Background="{ThemeResource SystemAccentColorDark2}" Opacity="0.55" />
+                                <Border Width="13" Height="13" CornerRadius="3" Background="{ThemeResource SystemAccentColorDark1}" Opacity="0.78" />
+                                <Border Width="13" Height="13" CornerRadius="3" Background="{ThemeResource SystemAccentColor}" Opacity="0.9" />
+                                <Border Width="13" Height="13" CornerRadius="3" Background="{ThemeResource SystemAccentColorLight1}" />
+                                <TextBlock Text="More" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="2,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
+
+                    </Grid>
+                </Border>
+
+                <!-- Right: Selected / Inspected Day Games List (Matching Fixed Height) -->
+                <Border x:Name="DayDetailsCard"
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        Height="242"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="18,16">
+                    <Grid RowSpacing="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock Text="{x:Bind ViewModel.SelectedDayTitle, Mode=OneWay}"
+                                           Style="{StaticResource BodyStrongTextBlockStyle}"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{x:Bind ViewModel.SelectedDaySubtitle, Mode=OneWay}"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <Button Content="Today"
+                                        Click="OnResetToTodayClicked"
+                                        Visibility="{x:Bind ViewModel.ShowTodayButton, Mode=OneWay}"
+                                        Padding="8,3"
+                                        FontSize="11" />
+
+                                <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                        CornerRadius="6"
+                                        Padding="8,4">
+                                    <TextBlock Text="{x:Bind ViewModel.SelectedDayTotalFormatted, Mode=OneWay}"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               FontWeight="SemiBold" />
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+
+                        <ScrollViewer Grid.Row="1"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.SelectedDayGames, Mode=OneWay}">
+                                <ItemsRepeater.Layout>
+                                    <StackLayout Spacing="8" />
+                                </ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="viewmodels:DayGamePlayItem">
+                                        <Grid Padding="10,8"
+                                              CornerRadius="6"
+                                              Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                              ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <Grid Grid.Column="0"
+                                                  Width="28"
+                                                  Height="28"
+                                                  CornerRadius="5"
+                                                  Background="{ThemeResource LayerOnAcrylicFillColorDefaultBrush}">
+                                                <FontIcon Glyph="&#xE7FC;" FontSize="13" Opacity="0.5" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                <Image Source="{x:Bind IconUrl, Converter={StaticResource StringToImageConverter}}" Stretch="UniformToFill" />
+                                            </Grid>
+
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{x:Bind Title}"
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Style="{StaticResource BodyTextBlockStyle}" />
+
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{x:Bind PlaytimeFormatted}"
+                                                       VerticalAlignment="Center"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+                        </ScrollViewer>
+
+                        <StackPanel Grid.Row="1"
+                                    Visibility="{x:Bind ViewModel.IsSelectedDayEmpty, Mode=OneWay}"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Spacing="6"
+                                    Padding="0,8">
+                            <FontIcon Glyph="&#xE787;"
+                                      FontSize="22"
+                                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                      Opacity="0.6"
+                                      HorizontalAlignment="Center" />
+                            <TextBlock Text="No playtime recorded"
+                                       Style="{StaticResource BodyStrongTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="Hover or click any square on the heatmap to inspect that day."
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                       TextWrapping="Wrap"
+                                       TextAlignment="Center" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- Playtime Leaderboard (with Share Bars) + Recent Sessions -->
+            <Grid x:Name="LeaderboardRecentGrid" ColumnSpacing="16" RowSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="LeaderboardCol" Width="*" />
+                    <ColumnDefinition x:Name="RecentSessionsCol" Width="320" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Left: Playtime Leaderboard Card -->
+                <Border x:Name="LeaderboardCard"
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="20,18">
+                    <StackPanel Spacing="14">
+                        <TextBlock Text="Playtime Leaderboard" Style="{StaticResource BodyStrongTextBlockStyle}" />
+
+                        <ItemsRepeater ItemsSource="{x:Bind ViewModel.TopPlayedGames, Mode=OneWay}">
+                            <ItemsRepeater.Layout>
+                                <StackLayout Spacing="14" />
+                            </ItemsRepeater.Layout>
+                            <ItemsRepeater.ItemTemplate>
+                                <DataTemplate x:DataType="viewmodels:GamePlayStatItem">
+                                    <Grid RowSpacing="8">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <Grid Grid.Row="0" ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <Grid Grid.Column="0" Width="36" Height="36" CornerRadius="6" Background="{ThemeResource LayerOnAcrylicFillColorDefaultBrush}">
+                                                <FontIcon Glyph="&#xE7FC;" FontSize="16" Opacity="0.5" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                <Image Source="{x:Bind IconUrl, Converter={StaticResource StringToImageConverter}}" Stretch="UniformToFill" />
+                                            </Grid>
+
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                                <TextBlock Text="{x:Bind Title}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{x:Bind MetaSummaryFormatted}"
+                                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            </StackPanel>
+
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{x:Bind TotalHoursFormatted}"
+                                                       FontWeight="SemiBold"
+                                                       VerticalAlignment="Center" />
+                                        </Grid>
+
+                                        <!-- Playtime Share Bar -->
+                                        <Grid Grid.Row="1"
+                                              Height="5"
+                                              CornerRadius="3"
+                                              Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                              Tag="{x:Bind}"
+                                              Loaded="OnShareBarTrackLoaded"
+                                              SizeChanged="OnShareBarTrackSizeChanged">
+                                            <Border HorizontalAlignment="Left"
+                                                    Height="5"
+                                                    CornerRadius="3"
+                                                    Background="{ThemeResource AccentFillColorDefaultBrush}" />
+                                        </Grid>
                                     </Grid>
+                                </DataTemplate>
+                            </ItemsRepeater.ItemTemplate>
+                        </ItemsRepeater>
+                    </StackPanel>
+                </Border>
 
-                                    <TextBlock Text="{x:Bind Title}" VerticalAlignment="Center" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" />
-                                </StackPanel>
+                <!-- Right: Recent Sessions Card -->
+                <Border x:Name="RecentSessionsCard"
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="18,16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Recent Sessions" Style="{StaticResource BodyStrongTextBlockStyle}" />
 
-                                <!-- Metrics -->
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
-                                    <TextBlock Text="{x:Bind SessionsFormatted}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
-                                    <TextBlock Text="{x:Bind TotalHoursFormatted}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                                </StackPanel>
-                            </Grid>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-            </StackPanel>
+                        <ItemsRepeater ItemsSource="{x:Bind ViewModel.RecentSessions, Mode=OneWay}">
+                            <ItemsRepeater.Layout>
+                                <StackLayout Spacing="10" />
+                            </ItemsRepeater.Layout>
+                            <ItemsRepeater.ItemTemplate>
+                                <DataTemplate x:DataType="viewmodels:RecentSessionItem">
+                                    <Grid ColumnSpacing="10" Padding="0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Grid Grid.Column="0" Width="28" Height="28" CornerRadius="5" Background="{ThemeResource LayerOnAcrylicFillColorDefaultBrush}">
+                                            <FontIcon Glyph="&#xE7FC;" FontSize="13" Opacity="0.5" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            <Image Source="{x:Bind IconUrl, Converter={StaticResource StringToImageConverter}}" Stretch="UniformToFill" />
+                                        </Grid>
+
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                                            <TextBlock Text="{x:Bind GameTitle}"
+                                                       Style="{StaticResource BodyTextBlockStyle}"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{x:Bind WhenFormatted}"
+                                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </StackPanel>
+
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{x:Bind DurationFormatted}"
+                                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsRepeater.ItemTemplate>
+                        </ItemsRepeater>
+                    </StackPanel>
+                </Border>
+            </Grid>
 
         </StackPanel>
     </ScrollViewer>

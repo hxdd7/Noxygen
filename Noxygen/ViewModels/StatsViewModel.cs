@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Noxygen.Models;
@@ -25,8 +26,26 @@ public enum StatsTimePeriod
 
 public partial class StatsViewModel : ObservableObject
 {
+    private static readonly DayOfWeek[] OrderedWeekdays =
+    {
+        DayOfWeek.Monday,
+        DayOfWeek.Tuesday,
+        DayOfWeek.Wednesday,
+        DayOfWeek.Thursday,
+        DayOfWeek.Friday,
+        DayOfWeek.Saturday,
+        DayOfWeek.Sunday
+    };
+
+    private static readonly string[] ShortWeekdayLabels =
+    {
+        "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
+    };
+
     private readonly PlaytimeTrackerService _trackerService = new();
     private readonly GameDataService _dataService = new();
+    private readonly UISettings _uiSettings = new();
+    private readonly DispatcherQueue _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
     private List<PlaytimeSession> _allSessions = new();
     private List<Game> _allGames = new();
@@ -41,13 +60,34 @@ public partial class StatsViewModel : ObservableObject
     private string _totalPlaytimeFormatted = "0 mins";
 
     [ObservableProperty]
+    private string _averageDailyFormatted = "0 mins";
+
+    [ObservableProperty]
     private int _totalSessionsCount;
 
     [ObservableProperty]
     private string _favoriteGameTitle = "None yet";
 
     [ObservableProperty]
+    private string _allTimeFavoriteSubtitle = "All-time top: None yet";
+
+    [ObservableProperty]
     private string _periodFavoriteGameTitle = "None yet";
+
+    [ObservableProperty]
+    private string _averageSessionFormatted = "0 mins";
+
+    [ObservableProperty]
+    private string _longestSessionFormatted = "0 mins";
+
+    [ObservableProperty]
+    private string _gamingStreakFormatted = "0 days";
+
+    [ObservableProperty]
+    private string _peakWeekdayText = "Peak: —";
+
+    [ObservableProperty]
+    private string _weekdayScaleText = "Scale: 0 mins max";
 
     [ObservableProperty]
     private string _heatmapSummaryText = "0 playtime in the last year";
@@ -71,6 +111,36 @@ public partial class StatsViewModel : ObservableObject
     public ObservableCollection<string> HeatmapMonths { get; } = new();
     public ObservableCollection<DayGamePlayItem> SelectedDayGames { get; } = new();
     public ObservableCollection<GamePlayStatItem> TopPlayedGames { get; } = new();
+    public ObservableCollection<WeekdayBarItem> WeekdayBars { get; } = new();
+    public ObservableCollection<RecentSessionItem> RecentSessions { get; } = new();
+
+    public StatsViewModel()
+    {
+        for (int i = 0; i < OrderedWeekdays.Length; i++)
+        {
+            WeekdayBars.Add(new WeekdayBarItem
+            {
+                DayLabel = ShortWeekdayLabels[i],
+                Minutes = 0,
+                BarHeight = 0,
+                TooltipText = $"{ShortWeekdayLabels[i]}: 0 mins"
+            });
+        }
+
+        _uiSettings.ColorValuesChanged += OnSystemColorValuesChanged;
+    }
+
+    private void OnSystemColorValuesChanged(UISettings sender, object args)
+    {
+        _dispatcherQueue?.TryEnqueue(() =>
+        {
+            if (_allSessions.Count > 0 || HeatmapDays.Count > 0)
+            {
+                BuildRollingLastYearHeatmap();
+                SelectHeatmapDay(_inspectedDate, isFromHover: true);
+            }
+        });
+    }
 
     partial void OnSelectedTimePeriodChanged(StatsTimePeriod value)
     {
@@ -105,7 +175,6 @@ public partial class StatsViewModel : ObservableObject
 
         if (!isFromHover)
         {
-            // Clicking the already-pinned day unpins back to Today; otherwise pins targetDate
             _pinnedDate = (_pinnedDate.HasValue && _pinnedDate.Value == targetDate && targetDate != DateTime.Today)
                 ? DateTime.Today
                 : targetDate;
@@ -251,7 +320,7 @@ public partial class StatsViewModel : ObservableObject
 
                 Brush fillBrush = !inRange
                     ? new SolidColorBrush(Colors.Transparent)
-                    : (mins <= 0 ? emptyBrush : CreateTierBrush(mins, accentColor, isDark));
+                    : (mins <= 0 ? emptyBrush : CreateTierBrush(mins, accentColor));
 
                 HeatmapDays.Add(new HeatmapDayCell
                 {
@@ -266,34 +335,35 @@ public partial class StatsViewModel : ObservableObject
         }
     }
 
-    private static Color GetCurrentAccentColor()
+    private Color GetCurrentAccentColor()
     {
-        if (Application.Current?.Resources.TryGetValue("SystemAccentColor", out var resource) == true &&
-            resource is Color resourceColor)
+        try
         {
-            return resourceColor;
+            return _uiSettings.GetColorValue(UIColorType.Accent);
         }
+        catch
+        {
+            if (Application.Current?.Resources.TryGetValue("SystemAccentColor", out var resource) == true &&
+                resource is Color resourceColor)
+            {
+                return resourceColor;
+            }
 
-        var uiSettings = new UISettings();
-        return uiSettings.GetColorValue(UIColorType.Accent);
+            return Colors.DodgerBlue;
+        }
     }
 
-    private static SolidColorBrush CreateTierBrush(double minutes, Color accentColor, bool isDark)
+    private static SolidColorBrush CreateTierBrush(double minutes, Color accentColor)
     {
         byte alpha = minutes switch
         {
-            < 30 => 145,
-            < 90 => 190,
-            < 180 => 228,
+            < 30 => 42,
+            < 90 => 88,
+            < 180 => 160,
             _ => 255
         };
 
-        double factor = (isDark && minutes < 30) ? 0.72 : 1.0;
-        byte r = (byte)(accentColor.R * factor);
-        byte g = (byte)(accentColor.G * factor);
-        byte b = (byte)(accentColor.B * factor);
-
-        return new SolidColorBrush(Color.FromArgb(alpha, r, g, b));
+        return new SolidColorBrush(Color.FromArgb(alpha, accentColor.R, accentColor.G, accentColor.B));
     }
 
     private List<PlaytimeSession> FilterSessionsByPeriod(IEnumerable<PlaytimeSession> sessions, StatsTimePeriod period)
@@ -326,8 +396,11 @@ public partial class StatsViewModel : ObservableObject
 
     private void RecalculateStats()
     {
-        var allTimeGrouped = _allSessions
+        var validAllSessions = _allSessions
             .Where(s => s != null && s.Duration.TotalMinutes >= 1)
+            .ToList();
+
+        var allTimeGrouped = validAllSessions
             .GroupBy(s => s.GameTitle)
             .Select(g => new
             {
@@ -338,34 +411,72 @@ public partial class StatsViewModel : ObservableObject
             .FirstOrDefault();
 
         FavoriteGameTitle = allTimeGrouped?.Title ?? "No sessions recorded";
+        AllTimeFavoriteSubtitle = allTimeGrouped != null
+            ? $"All-time top: {allTimeGrouped.Title}"
+            : "All-time top: None yet";
 
-        var filteredSessions = FilterSessionsByPeriod(_allSessions, SelectedTimePeriod);
+        GamingStreakFormatted = FormatStreak(CalculateCurrentStreak(validAllSessions));
+
+        RecentSessions.Clear();
+        foreach (var session in validAllSessions.OrderByDescending(s => s.StartTime).Take(6))
+        {
+            var matchedGame = _allGames.FirstOrDefault(
+                g => string.Equals(g.Title, session.GameTitle, StringComparison.OrdinalIgnoreCase));
+
+            RecentSessions.Add(new RecentSessionItem
+            {
+                GameTitle = session.GameTitle,
+                IconUrl = matchedGame?.IconUrl ?? string.Empty,
+                DurationFormatted = FormatPlaytime(session.Duration.TotalMinutes),
+                WhenFormatted = FormatRelativeDay(session.StartTime.Date)
+            });
+        }
+
+        var filteredSessions = FilterSessionsByPeriod(validAllSessions, SelectedTimePeriod);
 
         if (filteredSessions.Count == 0)
         {
             TotalPlaytimeFormatted = "0 mins";
+            AverageDailyFormatted = "0 mins";
+            AverageSessionFormatted = "0 mins";
+            LongestSessionFormatted = "0 mins";
             TotalSessionsCount = 0;
             PeriodFavoriteGameTitle = "No sessions in period";
+            PeakWeekdayText = "Peak: —";
+            WeekdayScaleText = "Scale: 0 mins max";
             TopPlayedGames.Clear();
+            BuildWeekdayBars(Array.Empty<PlaytimeSession>());
             return;
         }
 
         TotalSessionsCount = filteredSessions.Count;
 
-        var totalMinutes = filteredSessions.Sum(s => s.Duration.TotalMinutes);
+        double totalMinutes = filteredSessions.Sum(s => s.Duration.TotalMinutes);
         TotalPlaytimeFormatted = FormatPlaytime(totalMinutes);
+
+        int divisorDays = SelectedTimePeriod switch
+        {
+            StatsTimePeriod.LastWeek => 7,
+            StatsTimePeriod.LastMonth => 30,
+            StatsTimePeriod.LastYear => 365,
+            _ => Math.Max(1, (DateTime.Today - filteredSessions.Min(s => s.StartTime.Date)).Days + 1)
+        };
+
+        AverageDailyFormatted = FormatPlaytime(totalMinutes / divisorDays);
+        AverageSessionFormatted = FormatPlaytime(totalMinutes / filteredSessions.Count);
+        LongestSessionFormatted = FormatPlaytime(filteredSessions.Max(s => s.Duration.TotalMinutes));
+
+        BuildWeekdayBars(filteredSessions);
 
         var grouped = filteredSessions
             .GroupBy(s => s.GameTitle)
             .Select(g =>
             {
-                var totalMins = g.Sum(s => s.Duration.TotalMinutes);
+                double totalMins = g.Sum(s => s.Duration.TotalMinutes);
                 var matchedGame = _allGames.FirstOrDefault(
                     game => string.Equals(game.Title, g.Key, StringComparison.OrdinalIgnoreCase));
 
-                string iconPath = !string.IsNullOrWhiteSpace(matchedGame?.IconUrl)
-                    ? matchedGame.IconUrl
-                    : string.Empty;
+                double share = totalMinutes > 0 ? totalMins / totalMinutes : 0;
 
                 return new GamePlayStatItem
                 {
@@ -373,7 +484,10 @@ public partial class StatsViewModel : ObservableObject
                     TotalMinutes = totalMins,
                     TotalHoursFormatted = FormatPlaytime(totalMins),
                     SessionCount = g.Count(),
-                    IconUrl = iconPath
+                    SharePercent = (int)Math.Round(share * 100),
+                    ShareRatio = share > 0 ? Math.Clamp(share, 0.02, 1.0) : 0.0,
+                    ShareBarWidth = Math.Max(6, share * 360),
+                    IconUrl = matchedGame?.IconUrl ?? string.Empty
                 };
             })
             .OrderByDescending(x => x.TotalMinutes)
@@ -386,6 +500,88 @@ public partial class StatsViewModel : ObservableObject
         {
             TopPlayedGames.Add(item);
         }
+    }
+
+    private void BuildWeekdayBars(IEnumerable<PlaytimeSession> sessions)
+    {
+        if (WeekdayBars.Count != OrderedWeekdays.Length)
+        {
+            WeekdayBars.Clear();
+            for (int i = 0; i < OrderedWeekdays.Length; i++)
+            {
+                WeekdayBars.Add(new WeekdayBarItem { DayLabel = ShortWeekdayLabels[i] });
+            }
+        }
+
+        var totalsByDay = sessions
+            .GroupBy(s => s.StartTime.DayOfWeek)
+            .ToDictionary(g => g.Key, g => g.Sum(s => s.Duration.TotalMinutes));
+
+        double maxMins = OrderedWeekdays.Max(d => totalsByDay.TryGetValue(d, out var m) ? m : 0);
+        WeekdayScaleText = maxMins > 0 ? $"Scale: {FormatPlaytime(maxMins)} max" : "Scale: 0 mins max";
+
+        var peakEntry = OrderedWeekdays
+            .Select(d => new { Day = d, Mins = totalsByDay.TryGetValue(d, out var m) ? m : 0 })
+            .OrderByDescending(x => x.Mins)
+            .FirstOrDefault();
+
+        PeakWeekdayText = (peakEntry != null && peakEntry.Mins > 0)
+            ? $"Peak: {CultureInfo.InvariantCulture.DateTimeFormat.GetAbbreviatedDayName(peakEntry.Day)} ({FormatPlaytime(peakEntry.Mins)})"
+            : "Peak: —";
+
+        const double maxBarHeight = 112.0;
+
+        for (int i = 0; i < OrderedWeekdays.Length; i++)
+        {
+            double mins = totalsByDay.TryGetValue(OrderedWeekdays[i], out var m) ? m : 0;
+            double height = maxMins > 0 && mins > 0
+                ? Math.Max(8.0, (mins / maxMins) * maxBarHeight)
+                : 0.0;
+
+            WeekdayBars[i].Minutes = mins;
+            WeekdayBars[i].BarHeight = height;
+            WeekdayBars[i].TooltipText = $"{ShortWeekdayLabels[i]}: {FormatPlaytime(mins)}";
+        }
+    }
+
+    private static int CalculateCurrentStreak(IEnumerable<PlaytimeSession> sessions)
+    {
+        var activeDates = sessions
+            .Select(s => s.StartTime.Date)
+            .ToHashSet();
+
+        if (activeDates.Count == 0)
+        {
+            return 0;
+        }
+
+        DateTime cursor = activeDates.Contains(DateTime.Today)
+            ? DateTime.Today
+            : (activeDates.Contains(DateTime.Today.AddDays(-1)) ? DateTime.Today.AddDays(-1) : DateTime.MinValue);
+
+        if (cursor == DateTime.MinValue)
+        {
+            return 0;
+        }
+
+        int streak = 0;
+        while (activeDates.Contains(cursor))
+        {
+            streak++;
+            cursor = cursor.AddDays(-1);
+        }
+
+        return streak;
+    }
+
+    private static string FormatStreak(int days) =>
+        days == 1 ? "1 day" : $"{days} days";
+
+    private static string FormatRelativeDay(DateTime date)
+    {
+        if (date == DateTime.Today) return "Today";
+        if (date == DateTime.Today.AddDays(-1)) return "Yesterday";
+        return date.ToString("MMM d, yyyy", CultureInfo.InvariantCulture);
     }
 
     public static string FormatPlaytime(double totalMinutes)
@@ -436,12 +632,34 @@ public class DayGamePlayItem
     public string IconUrl { get; set; } = string.Empty;
 }
 
+public partial class WeekdayBarItem : ObservableObject
+{
+    public string DayLabel { get; set; } = string.Empty;
+    public double Minutes { get; set; }
+    public string TooltipText { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    private double _barHeight;
+}
+
+public class RecentSessionItem
+{
+    public string GameTitle { get; set; } = string.Empty;
+    public string IconUrl { get; set; } = string.Empty;
+    public string DurationFormatted { get; set; } = "0 mins";
+    public string WhenFormatted { get; set; } = string.Empty;
+}
+
 public class GamePlayStatItem
 {
     public string Title { get; set; } = string.Empty;
     public double TotalMinutes { get; set; }
     public string TotalHoursFormatted { get; set; } = "0 mins";
     public int SessionCount { get; set; }
+    public int SharePercent { get; set; }
+    public double ShareRatio { get; set; }
+    public double ShareBarWidth { get; set; }
     public string IconUrl { get; set; } = string.Empty;
     public string SessionsFormatted => $"{SessionCount} {(SessionCount == 1 ? "session" : "sessions")}";
+    public string MetaSummaryFormatted => $"{SessionsFormatted} · {SharePercent}% of playtime";
 }

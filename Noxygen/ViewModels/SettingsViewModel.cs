@@ -2,11 +2,14 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Noxygen.Services;
 using Noxygen.Helpers;
+using Noxygen.Services;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Windows.Storage;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 
 namespace Noxygen.ViewModels;
 
@@ -15,6 +18,7 @@ public partial class SettingsViewModel : ObservableObject
     private const string SelectedThemeKey = "AppSelectedTheme";
     private const string JumpListModeKey = "JumpListDisplayMode";
     private readonly LauncherDataService _launcherService = new();
+    private readonly PlaytimeTrackerService _playtimeTrackerService = new();
 
     [ObservableProperty]
     private int _selectedThemeIndex;
@@ -106,31 +110,110 @@ public partial class SettingsViewModel : ObservableObject
                 mainWindow.SyncLauncherSidebarItems();
             }
 
-            if (App.MainWindow?.Content is FrameworkElement root)
-            {
-                var dialog = new ContentDialog
-                {
-                    Title = "Launcher Scan Complete",
-                    Content = $"Found and pinned {detectedLaunchers.Count} installed game launcher(s) to the sidebar.",
-                    CloseButtonText = "OK",
-                    XamlRoot = root.XamlRoot
-                };
-                await dialog.ShowAsync();
-            }
+            await ShowMessageDialogAsync(
+                "Launcher Scan Complete",
+                $"Found and pinned {detectedLaunchers.Count} installed game launcher(s) to the sidebar.");
         }
         catch (Exception ex)
         {
-            if (App.MainWindow?.Content is FrameworkElement root)
+            await ShowMessageDialogAsync(
+                "Scan Failed",
+                $"An error occurred while scanning launchers:\n{ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExportPlaytimeAsync()
+    {
+        try
+        {
+            if (App.MainWindow is not Window mainWindow)
             {
-                var dialog = new ContentDialog
-                {
-                    Title = "Scan Failed",
-                    Content = $"An error occurred while scanning launchers:\n{ex.Message}",
-                    CloseButtonText = "OK",
-                    XamlRoot = root.XamlRoot
-                };
-                await dialog.ShowAsync();
+                return;
             }
+
+            var picker = new FileSavePicker
+            {
+                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                SuggestedFileName = $"noxygen-playtime-{DateTime.Today:yyyy-MM-dd}"
+            };
+            picker.FileTypeChoices.Add("JSON Backup", new List<string> { ".json" });
+
+            IntPtr hwnd = WindowNative.GetWindowHandle(mainWindow);
+            InitializeWithWindow.Initialize(picker, hwnd);
+
+            StorageFile? file = await picker.PickSaveFileAsync();
+            if (file == null) return;
+
+            string json = await _playtimeTrackerService.ExportSessionsJsonAsync();
+            await FileIO.WriteTextAsync(file, json);
+
+            await ShowMessageDialogAsync(
+                "Export Complete",
+                $"Your playtime history has been exported to:\n{file.Name}");
+        }
+        catch (Exception ex)
+        {
+            await ShowMessageDialogAsync(
+                "Export Failed",
+                $"Could not export playtime data:\n{ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task ImportPlaytimeAsync()
+    {
+        try
+        {
+            if (App.MainWindow is not Window mainWindow)
+            {
+                return;
+            }
+
+            var picker = new FileOpenPicker
+            {
+                SuggestedStartLocation = PickerLocationId.DocumentsLibrary
+            };
+            picker.FileTypeFilter.Add(".json");
+
+            IntPtr hwnd = WindowNative.GetWindowHandle(mainWindow);
+            InitializeWithWindow.Initialize(picker, hwnd);
+
+            StorageFile? file = await picker.PickSingleFileAsync();
+            if (file == null) return;
+
+            string json = await FileIO.ReadTextAsync(file);
+            var (importedCount, totalCount) = await _playtimeTrackerService.ImportSessionsJsonAsync(json, mergeWithExisting: true);
+
+            if (App.MainWindow is MainWindow mw)
+            {
+                mw.UpdateTaskbarJumpList();
+            }
+
+            await ShowMessageDialogAsync(
+                "Import Complete",
+                $"Added {importedCount} new play session(s) from {file.Name}.\nTotal recorded sessions: {totalCount}.");
+        }
+        catch (Exception ex)
+        {
+            await ShowMessageDialogAsync(
+                "Import Failed",
+                $"Could not import playtime data:\n{ex.Message}");
+        }
+    }
+
+    private static async Task ShowMessageDialogAsync(string title, string content)
+    {
+        if (App.MainWindow?.Content is FrameworkElement root)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = title,
+                Content = content,
+                CloseButtonText = "OK",
+                XamlRoot = root.XamlRoot
+            };
+            await dialog.ShowAsync();
         }
     }
 }

@@ -83,7 +83,17 @@
 
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="Library" Icon="Library" Tag="LibraryPage" />
-                <NavigationViewItem Content="Statistics" Icon="CalendarDay" Tag="StatsPage" />
+                <NavigationViewItem Content="Statistics" Tag="StatsPage">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE9D2;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <NavigationViewItem Content="PC Information" Tag="SystemInfoPage">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7F8;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
 
                 <NavigationViewItemHeader x:Name="LaunchersHeader" 
                       Content="Launchers" 
