@@ -9,6 +9,7 @@ using System;
 using System.IO;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Noxygen.Views;
@@ -65,14 +66,13 @@ public sealed partial class LibraryPage : Page
             // 1. Record to Recent Games history
             Noxygen.Services.RecentGamesService.AddRecentGame(game.Title);
 
-            // 2. Initialize Playtime Tracker & Start Timer
+            // 2. Initialize Playtime Tracker
             var playtimeTracker = new PlaytimeTrackerService();
             var sessionStartTime = DateTime.Now;
 
             Process? launchedProcess = null;
-            string? targetExeName = !string.IsNullOrEmpty(game.ExecutablePath)
-                ? Path.GetFileNameWithoutExtension(game.ExecutablePath)
-                : null;
+            bool isRiotLaunch = IsRiotGame(game);
+            string? targetExeName = ResolveTrackedProcessName(game, isRiotLaunch);
 
             // 3. Handle Steam Protocol Launch
             if (string.Equals(game.Launcher, "Steam", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(game.AppId))
@@ -85,6 +85,18 @@ public sealed partial class LibraryPage : Page
             {
                 var uri = new Uri($"com.epicgames.launcher://apps/{game.AppId}?action=launch");
                 await Windows.System.Launcher.LaunchUriAsync(uri);
+            }
+            // 4b. Handle Riot Client Launch (RiotClientServices exits immediately after handing off)
+            else if (isRiotLaunch)
+            {
+                var riotStartInfo = BuildRiotClientStartInfo(game);
+                if (riotStartInfo == null)
+                {
+                    await ShowErrorDialogAsync("Riot Client Not Found", "Could not locate RiotClientServices.exe to launch this game.");
+                    return;
+                }
+
+                Process.Start(riotStartInfo);
             }
             // 5. Fallback to Direct Executable Execution
             else
@@ -114,8 +126,8 @@ public sealed partial class LibraryPage : Page
                 Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId)?.Hide();
             }
 
-            // 7. Handle Window Restoration & Playtime Logging (Direct Process or Process Name Polling for URIs)
-            if (launchedProcess != null)
+            // 7. Track actual game process rather than bootstrapper/launcher exit
+            if (launchedProcess != null && !isRiotLaunch)
             {
                 launchedProcess.EnableRaisingEvents = true;
                 launchedProcess.Exited += async (s, args) =>
@@ -127,14 +139,12 @@ public sealed partial class LibraryPage : Page
             }
             else if (!string.IsNullOrEmpty(targetExeName))
             {
-                // Background monitor for Steam/Epic games spawned via protocol URI
                 _ = Task.Run(async () =>
                 {
-                    // Give the launcher a few seconds to spawn the game process
-                    await Task.Delay(4000);
+                    // Wait for Riot Client / launcher handoff and user to press Play
+                    await Task.Delay(isRiotLaunch ? 8000 : 4000);
 
                     Process? gameProc = null;
-                    // Wait for the game process to appear
                     while (true)
                     {
                         var procs = Process.GetProcessesByName(targetExeName);
@@ -143,13 +153,12 @@ public sealed partial class LibraryPage : Page
                             gameProc = procs[0];
                             break;
                         }
-                        await Task.Delay(2000);
+                        await Task.Delay(2500);
                     }
 
-                    // Re-anchor start time right when the actual game process is detected running
+                    // Start counting playtime once the real game process is active
                     var activeStartTime = DateTime.Now;
 
-                    // Wait until the game process exits
                     gameProc.EnableRaisingEvents = true;
                     var tcs = new TaskCompletionSource();
                     gameProc.Exited += (s, e) => tcs.SetResult();
@@ -157,6 +166,15 @@ public sealed partial class LibraryPage : Page
 
                     var activeEndTime = DateTime.Now;
                     await playtimeTracker.LogSessionAsync(game.Title, activeStartTime, activeEndTime);
+                    RestoreWindow();
+                });
+            }
+            else if (isRiotLaunch)
+            {
+                // Fallback if process name couldn't be determined: restore after a short grace period
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(15000);
                     RestoreWindow();
                 });
             }
@@ -169,6 +187,94 @@ public sealed partial class LibraryPage : Page
         {
             await ShowErrorDialogAsync("Failed to Launch Game", ex.Message);
         }
+    }
+
+    private static string? ResolveTrackedProcessName(Game game, bool isRiotLaunch)
+    {
+        if (isRiotLaunch)
+        {
+            string combined = $"{game.Title} {game.ExecutablePath} {game.AppId}";
+            if (combined.Contains("valorant", StringComparison.OrdinalIgnoreCase))
+            {
+                return "VALORANT-Win64-Shipping";
+            }
+            if (combined.Contains("league", StringComparison.OrdinalIgnoreCase) ||
+                combined.Contains("lol", StringComparison.OrdinalIgnoreCase))
+            {
+                return "League of Legends";
+            }
+        }
+
+        return !string.IsNullOrEmpty(game.ExecutablePath)
+            ? Path.GetFileNameWithoutExtension(game.ExecutablePath)
+            : null;
+    }
+
+    private static bool IsRiotGame(Game game) =>
+        string.Equals(game.Launcher, "Riot", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(game.Launcher, "Riot Client", StringComparison.OrdinalIgnoreCase) ||
+        (!string.IsNullOrWhiteSpace(game.ExecutablePath) &&
+         game.ExecutablePath.Contains("Riot Games", StringComparison.OrdinalIgnoreCase) &&
+         !game.ExecutablePath.EndsWith("RiotClientServices.exe", StringComparison.OrdinalIgnoreCase));
+
+    private static ProcessStartInfo? BuildRiotClientStartInfo(Game game)
+    {
+        string? riotClientPath = null;
+
+        try
+        {
+            var launcherService = new LauncherDataService();
+            var launchers = launcherService.LoadLaunchersSync();
+            var riotLauncher = launchers?.FirstOrDefault(l =>
+                l != null &&
+                (l.Name?.Contains("Riot", StringComparison.OrdinalIgnoreCase) == true ||
+                 l.ExecutablePath?.Contains("RiotClient", StringComparison.OrdinalIgnoreCase) == true));
+
+            if (!string.IsNullOrWhiteSpace(riotLauncher?.ExecutablePath) && File.Exists(riotLauncher.ExecutablePath))
+            {
+                riotClientPath = riotLauncher.ExecutablePath;
+            }
+        }
+        catch
+        {
+            // Fall through to standard paths
+        }
+
+        if (string.IsNullOrWhiteSpace(riotClientPath))
+        {
+            string commonAppDataCandidate = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                "Riot Games", "RiotClientServices.exe");
+
+            if (File.Exists(commonAppDataCandidate))
+            {
+                riotClientPath = commonAppDataCandidate;
+            }
+            else if (File.Exists(@"C:\Riot Games\RiotClient\RiotClientServices.exe"))
+            {
+                riotClientPath = @"C:\Riot Games\RiotClient\RiotClientServices.exe";
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(riotClientPath) || !File.Exists(riotClientPath))
+        {
+            return null;
+        }
+
+        string combined = $"{game.Title} {game.ExecutablePath} {game.AppId}";
+        string product = combined.Contains("valorant", StringComparison.OrdinalIgnoreCase)
+            ? "valorant"
+            : combined.Contains("league", StringComparison.OrdinalIgnoreCase) ||
+              combined.Contains("lol", StringComparison.OrdinalIgnoreCase)
+                ? "league_of_legends"
+                : !string.IsNullOrWhiteSpace(game.AppId) ? game.AppId.Trim() : "valorant";
+
+        return new ProcessStartInfo
+        {
+            FileName = riotClientPath,
+            Arguments = $"--launch-product={product} --launch-patchline=live",
+            UseShellExecute = true
+        };
     }
 
     private void RestoreWindow()

@@ -7,132 +7,213 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="36">
-        <StackPanel Spacing="24">
+    <ScrollViewer x:Name="DetailsScrollViewer" VerticalScrollBarVisibility="Auto">
+        <StackPanel>
 
-            <!-- Header & Actions -->
-            <StackPanel Spacing="12">
-                <StackPanel Spacing="4">
-                    <TextBlock Text="{x:Bind SelectedGame.Title, Mode=OneWay}"
-                               FontSize="28"
-                               FontWeight="SemiBold"
-                               TextTrimming="CharacterEllipsis" />
-                    <TextBlock Text="{x:Bind ViewModel.HeaderSubtitleText, Mode=OneWay}"
-                               Style="{StaticResource CaptionTextBlockStyle}"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <!-- Hero Header with 400px Background Height & True Pixel Fade-Out -->
+            <Grid MinHeight="400">
+                <!-- Background Artwork Host (Faded via CompositionMaskBrush in Code-Behind) -->
+                <Border x:Name="HeroBackgroundHost"
+            Height="400"
+            VerticalAlignment="Top"
+            HorizontalAlignment="Stretch" />
+
+                <!-- Hero Foreground Content -->
+                <StackPanel Padding="48,40,48,20"
+                VerticalAlignment="Bottom"
+                Spacing="18">
+
+                    <!-- Cover Art + Title & Developer -->
+                    <Grid ColumnSpacing="20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Cover Art Poster -->
+                        <Border Grid.Column="0"
+        Width="96"
+        Height="136"
+        CornerRadius="8"
+        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+        BorderThickness="1">
+                            <Grid>
+                                <FontIcon Glyph="&#xE7FC;"
+                  FontSize="24"
+                  Opacity="0.4"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center" />
+                                <Image Source="{x:Bind ViewModel.CoverArtSource, Mode=OneWay}"
+               Stretch="UniformToFill" />
+                            </Grid>
+                        </Border>
+
+                        <!-- Title, Company & Short Summary -->
+                        <StackPanel Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Spacing="6"
+                        MaxWidth="640"
+                        HorizontalAlignment="Left">
+                            <TextBlock Text="{x:Bind SelectedGame.Title, Mode=OneWay}"
+                           FontSize="32"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap" />
+
+                            <TextBlock Text="{x:Bind ViewModel.HeaderSubtitleText, Mode=OneWay}"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                            <TextBlock Text="{x:Bind ViewModel.DescriptionText, Mode=OneWay}"
+                           Style="{StaticResource BodyTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           MaxLines="2"
+                           TextTrimming="CharacterEllipsis"
+                           Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Primary & Secondary WinUI Action Buttons -->
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Button Click="LaunchGame_Click" Style="{StaticResource AccentButtonStyle}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE768;" FontSize="14" />
+                                <TextBlock Text="Play" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Click="OpenFolder_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE838;" FontSize="14" />
+                                <TextBlock Text="Open Folder" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                </StackPanel>
+            </Grid>
+
+            <!-- Main Page Content with 48px Side & Bottom Padding -->
+            <StackPanel Padding="48,16,48,48" Spacing="28">
+
+                <!-- Your Gaming Statistics -->
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Your Gaming Statistics" Style="{StaticResource BodyStrongTextBlockStyle}" />
+
+                    <Grid ColumnSpacing="14" RowSpacing="14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="18">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Total Playtime" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.TotalPlaytimeFormatted, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="18">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Sessions" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.SessionsCount, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="2" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="18">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Avg. Session" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.AverageSessionFormatted, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="3" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="18">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Longest Session" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.LongestSessionFormatted, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
                 </StackPanel>
 
-                <!-- Game Description inside a Card Box -->
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8"
-                        Padding="18,16">
-                    <TextBlock Text="{x:Bind ViewModel.DescriptionText, Mode=OneWay}"
-                               Style="{StaticResource BodyTextBlockStyle}"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               TextWrapping="Wrap" />
-                </Border>
-
-                <StackPanel Orientation="Horizontal" Spacing="12">
-                    <Button Click="LaunchGame_Click" Style="{StaticResource AccentButtonStyle}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE768;" FontSize="14" />
-                            <TextBlock Text="Play" />
-                        </StackPanel>
-                    </Button>
-
-                    <Button Click="OpenFolder_Click">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE838;" FontSize="14" />
-                            <TextBlock Text="Open Folder" />
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-            </StackPanel>
-
-            <!-- Your Gaming Statistics -->
-            <StackPanel Spacing="12">
-                <TextBlock Text="Your Gaming Statistics" Style="{StaticResource BodyStrongTextBlockStyle}" />
-
-                <Grid ColumnSpacing="12" RowSpacing="12">
+                <!-- Playtime Activity + Session Insights -->
+                <Grid ColumnSpacing="16" RowSpacing="16">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <Border Grid.Column="0" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Total Playtime" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            <TextBlock Text="{x:Bind ViewModel.TotalPlaytimeFormatted, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" />
-                        </StackPanel>
-                    </Border>
+                    <!-- Last 7 Days Bar Chart -->
+                    <Border Grid.Column="0" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="22,20">
+                        <Grid RowSpacing="12">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="156" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
 
-                    <Border Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Sessions" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            <TextBlock Text="{x:Bind ViewModel.SessionsCount, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" />
-                        </StackPanel>
-                    </Border>
+                            <StackPanel Grid.Row="0" Spacing="2">
+                                <TextBlock Text="Playtime Activity" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <TextBlock Text="Hours played per day" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
 
-                    <Border Grid.Column="2" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Avg. Session" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            <TextBlock Text="{x:Bind ViewModel.AverageSessionFormatted, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" />
-                        </StackPanel>
-                    </Border>
+                            <TextBlock Grid.Row="1"
+                                       Text="Recorded playtime for the last seven days."
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
 
-                    <Border Grid.Column="3" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Longest Session" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            <TextBlock Text="{x:Bind ViewModel.LongestSessionFormatted, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" />
-                        </StackPanel>
-                    </Border>
-                </Grid>
-            </StackPanel>
+                            <Grid Grid.Row="2" ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="48" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
 
-            <!-- Playtime Activity + Session Insights -->
-            <Grid ColumnSpacing="16" RowSpacing="16">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
+                                <Grid Grid.Column="0">
+                                    <TextBlock Text="{x:Bind ViewModel.ActivityScaleMaxText, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Top" />
+                                    <TextBlock Text="{x:Bind ViewModel.ActivityScaleMidText, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Text="0 hrs" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Bottom" />
+                                </Grid>
 
-                <!-- Last 7 Days Bar Chart -->
-                <Border Grid.Column="0" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="20,18">
-                    <Grid RowSpacing="12">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="156" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                                <Grid Grid.Column="1" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
 
-                        <StackPanel Grid.Row="0" Spacing="2">
-                            <TextBlock Text="Playtime Activity" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                            <TextBlock Text="Hours played per day" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                        </StackPanel>
+                                    <Border Grid.Column="0" Height="{x:Bind ViewModel.LastSevenDaysBars[0].BarHeight, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="4,4,0,0" Background="{ThemeResource AccentFillColorDefaultBrush}" ToolTipService.ToolTip="{x:Bind ViewModel.LastSevenDaysBars[0].TooltipText, Mode=OneWay}" />
+                                    <Border Grid.Column="1" Height="{x:Bind ViewModel.LastSevenDaysBars[1].BarHeight, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="4,4,0,0" Background="{ThemeResource AccentFillColorDefaultBrush}" ToolTipService.ToolTip="{x:Bind ViewModel.LastSevenDaysBars[1].TooltipText, Mode=OneWay}" />
+                                    <Border Grid.Column="2" Height="{x:Bind ViewModel.LastSevenDaysBars[2].BarHeight, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="4,4,0,0" Background="{ThemeResource AccentFillColorDefaultBrush}" ToolTipService.ToolTip="{x:Bind ViewModel.LastSevenDaysBars[2].TooltipText, Mode=OneWay}" />
+                                    <Border Grid.Column="3" Height="{x:Bind ViewModel.LastSevenDaysBars[3].BarHeight, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="4,4,0,0" Background="{ThemeResource AccentFillColorDefaultBrush}" ToolTipService.ToolTip="{x:Bind ViewModel.LastSevenDaysBars[3].TooltipText, Mode=OneWay}" />
+                                    <Border Grid.Column="4" Height="{x:Bind ViewModel.LastSevenDaysBars[4].BarHeight, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="4,4,0,0" Background="{ThemeResource AccentFillColorDefaultBrush}" ToolTipService.ToolTip="{x:Bind ViewModel.LastSevenDaysBars[4].TooltipText, Mode=OneWay}" />
+                                    <Border Grid.Column="5" Height="{x:Bind ViewModel.LastSevenDaysBars[5].BarHeight, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="4,4,0,0" Background="{ThemeResource AccentFillColorDefaultBrush}" ToolTipService.ToolTip="{x:Bind ViewModel.LastSevenDaysBars[5].TooltipText, Mode=OneWay}" />
+                                    <Border Grid.Column="6" Height="{x:Bind ViewModel.LastSevenDaysBars[6].BarHeight, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="4,4,0,0" Background="{ThemeResource AccentFillColorDefaultBrush}" ToolTipService.ToolTip="{x:Bind ViewModel.LastSevenDaysBars[6].TooltipText, Mode=OneWay}" />
+                                </Grid>
 
-                        <TextBlock Grid.Row="1"
-                                   Text="Recorded playtime for the last seven days."
-                                   Style="{StaticResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-
-                        <Grid Grid.Row="2" ColumnSpacing="12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="48" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <Grid Grid.Column="0">
-                                <TextBlock Text="{x:Bind ViewModel.ActivityScaleMaxText, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Top" />
-                                <TextBlock Text="{x:Bind ViewModel.ActivityScaleMidText, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
-                                <TextBlock Text="0 hrs" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Bottom" />
+                                <StackPanel Grid.Column="1"
+                                            Visibility="{x:Bind ViewModel.IsActivityEmpty, Mode=OneWay}"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Spacing="4">
+                                    <TextBlock Text="No activity in the last 7 days"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               HorizontalAlignment="Center" />
+                                    <TextBlock Text="Launch the game to record daily playtime."
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               HorizontalAlignment="Center" />
+                                </StackPanel>
                             </Grid>
 
-                            <Grid Grid.Column="1" ColumnSpacing="8">
+                            <Grid Grid.Row="3" Margin="60,0,0,0" ColumnSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
@@ -143,185 +224,151 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
 
-                                <Border Grid.Column="0" Height="{x:Bind ViewModel.LastSevenDaysBars[0].BarHeight, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="4,4,0,0" Background="{ThemeResource AccentFillColorDefaultBrush}" ToolTipService.ToolTip="{x:Bind ViewModel.LastSevenDaysBars[0].TooltipText, Mode=OneWay}" />
-                                <Border Grid.Column="1" Height="{x:Bind ViewModel.LastSevenDaysBars[1].BarHeight, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="4,4,0,0" Background="{ThemeResource AccentFillColorDefaultBrush}" ToolTipService.ToolTip="{x:Bind ViewModel.LastSevenDaysBars[1].TooltipText, Mode=OneWay}" />
-                                <Border Grid.Column="2" Height="{x:Bind ViewModel.LastSevenDaysBars[2].BarHeight, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="4,4,0,0" Background="{ThemeResource AccentFillColorDefaultBrush}" ToolTipService.ToolTip="{x:Bind ViewModel.LastSevenDaysBars[2].TooltipText, Mode=OneWay}" />
-                                <Border Grid.Column="3" Height="{x:Bind ViewModel.LastSevenDaysBars[3].BarHeight, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="4,4,0,0" Background="{ThemeResource AccentFillColorDefaultBrush}" ToolTipService.ToolTip="{x:Bind ViewModel.LastSevenDaysBars[3].TooltipText, Mode=OneWay}" />
-                                <Border Grid.Column="4" Height="{x:Bind ViewModel.LastSevenDaysBars[4].BarHeight, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="4,4,0,0" Background="{ThemeResource AccentFillColorDefaultBrush}" ToolTipService.ToolTip="{x:Bind ViewModel.LastSevenDaysBars[4].TooltipText, Mode=OneWay}" />
-                                <Border Grid.Column="5" Height="{x:Bind ViewModel.LastSevenDaysBars[5].BarHeight, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="4,4,0,0" Background="{ThemeResource AccentFillColorDefaultBrush}" ToolTipService.ToolTip="{x:Bind ViewModel.LastSevenDaysBars[5].TooltipText, Mode=OneWay}" />
-                                <Border Grid.Column="6" Height="{x:Bind ViewModel.LastSevenDaysBars[6].BarHeight, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="4,4,0,0" Background="{ThemeResource AccentFillColorDefaultBrush}" ToolTipService.ToolTip="{x:Bind ViewModel.LastSevenDaysBars[6].TooltipText, Mode=OneWay}" />
+                                <TextBlock Grid.Column="0" Text="{x:Bind ViewModel.LastSevenDaysBars[0].Label, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="{x:Bind ViewModel.LastSevenDaysBars[1].Label, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
+                                <TextBlock Grid.Column="2" Text="{x:Bind ViewModel.LastSevenDaysBars[2].Label, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
+                                <TextBlock Grid.Column="3" Text="{x:Bind ViewModel.LastSevenDaysBars[3].Label, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
+                                <TextBlock Grid.Column="4" Text="{x:Bind ViewModel.LastSevenDaysBars[4].Label, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
+                                <TextBlock Grid.Column="5" Text="{x:Bind ViewModel.LastSevenDaysBars[5].Label, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
+                                <TextBlock Grid.Column="6" Text="{x:Bind ViewModel.LastSevenDaysBars[6].Label, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
                             </Grid>
+                        </Grid>
+                    </Border>
 
-                            <StackPanel Grid.Column="1"
-                                        Visibility="{x:Bind ViewModel.IsActivityEmpty, Mode=OneWay}"
+                    <!-- Session Insights -->
+                    <Border Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="22,20">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="Session Insights" Style="{StaticResource BodyStrongTextBlockStyle}" />
+
+                            <Grid>
+                                <TextBlock Text="Last Played" Style="{StaticResource BodyTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Left" />
+                                <TextBlock Text="{x:Bind ViewModel.LastPlayedFormatted, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" HorizontalAlignment="Right" />
+                            </Grid>
+                            <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" />
+
+                            <Grid>
+                                <TextBlock Text="Most Active Day" Style="{StaticResource BodyTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Left" />
+                                <TextBlock Text="{x:Bind ViewModel.MostActiveDayFormatted, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" HorizontalAlignment="Right" />
+                            </Grid>
+                            <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" />
+
+                            <Grid>
+                                <TextBlock Text="Total Days Played" Style="{StaticResource BodyTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Left" />
+                                <TextBlock Text="{x:Bind ViewModel.TotalDaysPlayedFormatted, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" HorizontalAlignment="Right" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Recorded Sessions -->
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Sessions" Style="{StaticResource BodyStrongTextBlockStyle}" />
+
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="22">
+                        <Grid>
+                            <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasSessions, Mode=OneWay}">
+                                <ItemsRepeater ItemsSource="{x:Bind ViewModel.VisibleSessions, Mode=OneWay}">
+                                    <ItemsRepeater.Layout>
+                                        <StackLayout Spacing="12" />
+                                    </ItemsRepeater.Layout>
+                                    <ItemsRepeater.ItemTemplate>
+                                        <DataTemplate x:DataType="viewmodels:GameSessionDetailItem">
+                                            <Grid>
+                                                <StackPanel Spacing="2" HorizontalAlignment="Left">
+                                                    <TextBlock Text="{x:Bind DayLabel}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                                    <TextBlock Text="{x:Bind TimeWindowText}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                </StackPanel>
+                                                <TextBlock Text="{x:Bind DurationFormatted}" Style="{StaticResource BodyStrongTextBlockStyle}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+
+                                <HyperlinkButton Content="{x:Bind ViewModel.SessionToggleText, Mode=OneWay}"
+                                                 Click="ToggleSessions_Click"
+                                                 Visibility="{x:Bind ViewModel.CanToggleSessions, Mode=OneWay}"
+                                                 HorizontalAlignment="Center" />
+                            </StackPanel>
+
+                            <StackPanel Visibility="{x:Bind ViewModel.IsSessionsEmpty, Mode=OneWay}"
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
-                                        Spacing="4">
-                                <TextBlock Text="No activity in the last 7 days"
+                                        Spacing="4"
+                                        Padding="0,12">
+                                <TextBlock Text="No sessions recorded yet"
                                            Style="{StaticResource BodyStrongTextBlockStyle}"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                            HorizontalAlignment="Center" />
-                                <TextBlock Text="Launch the game to record daily playtime."
+                                <TextBlock Text="Play this game to start tracking session history."
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                            HorizontalAlignment="Center" />
                             </StackPanel>
                         </Grid>
+                    </Border>
+                </StackPanel>
 
-                        <Grid Grid.Row="3" Margin="60,0,0,0" ColumnSpacing="8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+                <!-- Game Information -->
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Game Information" Style="{StaticResource BodyStrongTextBlockStyle}" />
 
-                            <TextBlock Grid.Column="0" Text="{x:Bind ViewModel.LastSevenDaysBars[0].Label, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
-                            <TextBlock Grid.Column="1" Text="{x:Bind ViewModel.LastSevenDaysBars[1].Label, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
-                            <TextBlock Grid.Column="2" Text="{x:Bind ViewModel.LastSevenDaysBars[2].Label, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
-                            <TextBlock Grid.Column="3" Text="{x:Bind ViewModel.LastSevenDaysBars[3].Label, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
-                            <TextBlock Grid.Column="4" Text="{x:Bind ViewModel.LastSevenDaysBars[4].Label, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
-                            <TextBlock Grid.Column="5" Text="{x:Bind ViewModel.LastSevenDaysBars[5].Label, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
-                            <TextBlock Grid.Column="6" Text="{x:Bind ViewModel.LastSevenDaysBars[6].Label, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
-                        </Grid>
+                    <Grid ColumnSpacing="14" RowSpacing="14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0" Grid.Column="0" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="18,14">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Developer" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.DeveloperText, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Row="0" Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="18,14">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Genre" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.GenreText, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Row="1" Grid.Column="0" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="18,14">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Game Size" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.GameVersionText, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Row="1" Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="18,14">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Installation" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.InstallationText, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            </StackPanel>
+                        </Border>
                     </Grid>
-                </Border>
+                </StackPanel>
 
-                <!-- Session Insights -->
-                <Border Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="20,18">
-                    <StackPanel Spacing="12">
-                        <TextBlock Text="Session Insights" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                <!-- Personal Notes -->
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Personal Notes" Style="{StaticResource BodyStrongTextBlockStyle}" />
 
-                        <Grid>
-                            <TextBlock Text="Last Played" Style="{StaticResource BodyTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Left" />
-                            <TextBlock Text="{x:Bind ViewModel.LastPlayedFormatted, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" HorizontalAlignment="Right" />
-                        </Grid>
-                        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" />
-
-                        <Grid>
-                            <TextBlock Text="Most Active Day" Style="{StaticResource BodyTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Left" />
-                            <TextBlock Text="{x:Bind ViewModel.MostActiveDayFormatted, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" HorizontalAlignment="Right" />
-                        </Grid>
-                        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" />
-
-                        <Grid>
-                            <TextBlock Text="Total Days Played" Style="{StaticResource BodyTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Left" />
-                            <TextBlock Text="{x:Bind ViewModel.TotalDaysPlayedFormatted, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" HorizontalAlignment="Right" />
-                        </Grid>
-                    </StackPanel>
-                </Border>
-            </Grid>
-
-            <!-- Recorded Sessions -->
-            <StackPanel Spacing="12">
-                <TextBlock Text="Sessions" Style="{StaticResource BodyStrongTextBlockStyle}" />
-
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="20">
-                    <Grid>
-                        <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasSessions, Mode=OneWay}">
-                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.VisibleSessions, Mode=OneWay}">
-                                <ItemsRepeater.Layout>
-                                    <StackLayout Spacing="12" />
-                                </ItemsRepeater.Layout>
-                                <ItemsRepeater.ItemTemplate>
-                                    <DataTemplate x:DataType="viewmodels:GameSessionDetailItem">
-                                        <Grid>
-                                            <StackPanel Spacing="2" HorizontalAlignment="Left">
-                                                <TextBlock Text="{x:Bind DayLabel}" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                                                <TextBlock Text="{x:Bind TimeWindowText}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                            </StackPanel>
-                                            <TextBlock Text="{x:Bind DurationFormatted}" Style="{StaticResource BodyStrongTextBlockStyle}" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </ItemsRepeater.ItemTemplate>
-                            </ItemsRepeater>
-
-                            <HyperlinkButton Content="{x:Bind ViewModel.SessionToggleText, Mode=OneWay}"
-                                             Click="ToggleSessions_Click"
-                                             Visibility="{x:Bind ViewModel.CanToggleSessions, Mode=OneWay}"
-                                             HorizontalAlignment="Center" />
-                        </StackPanel>
-
-                        <StackPanel Visibility="{x:Bind ViewModel.IsSessionsEmpty, Mode=OneWay}"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Spacing="4"
-                                    Padding="0,12">
-                            <TextBlock Text="No sessions recorded yet"
-                                       Style="{StaticResource BodyStrongTextBlockStyle}"
-                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                       HorizontalAlignment="Center" />
-                            <TextBlock Text="Play this game to start tracking session history."
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="20,18">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Keep track of your progress, favorite levels, puzzles and things to try."
                                        Style="{StaticResource CaptionTextBlockStyle}"
-                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                       HorizontalAlignment="Center" />
-                        </StackPanel>
-                    </Grid>
-                </Border>
-            </StackPanel>
-
-            <!-- Game Information -->
-            <StackPanel Spacing="12">
-                <TextBlock Text="Game Information" Style="{StaticResource BodyStrongTextBlockStyle}" />
-
-                <Grid ColumnSpacing="12" RowSpacing="12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-
-                    <Border Grid.Row="0" Grid.Column="0" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16,12">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Developer" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            <TextBlock Text="{x:Bind ViewModel.DeveloperText, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <TextBox Text="{x:Bind ViewModel.PersonalNotes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     PlaceholderText="Write your notes here..."
+                                     AcceptsReturn="True"
+                                     MinHeight="72" />
                         </StackPanel>
                     </Border>
+                </StackPanel>
 
-                    <Border Grid.Row="0" Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16,12">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Genre" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            <TextBlock Text="{x:Bind ViewModel.GenreText, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Grid.Row="1" Grid.Column="0" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16,12">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Game Size" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            <TextBlock Text="{x:Bind ViewModel.GameVersionText, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Grid.Row="1" Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16,12">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Installation" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            <TextBlock Text="{x:Bind ViewModel.InstallationText, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                        </StackPanel>
-                    </Border>
-                </Grid>
-            </StackPanel>
-
-            <!-- Personal Notes -->
-            <StackPanel Spacing="12">
-                <TextBlock Text="Personal Notes" Style="{StaticResource BodyStrongTextBlockStyle}" />
-
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="18,16">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="Keep track of your progress, favorite levels, puzzles and things to try."
-                                   Style="{StaticResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                        <TextBox Text="{x:Bind ViewModel.PersonalNotes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 PlaceholderText="Write your notes here..."
-                                 AcceptsReturn="True"
-                                 MinHeight="72" />
-                    </StackPanel>
-                </Border>
             </StackPanel>
 
         </StackPanel>

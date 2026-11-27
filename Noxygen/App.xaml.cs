@@ -151,6 +151,14 @@ public partial class App : Application
             {
                 await Windows.System.Launcher.LaunchUriAsync(new Uri($"com.epicgames.launcher://apps/{game.AppId}?action=launch"));
             }
+            else if (IsRiotGame(game))
+            {
+                var riotStartInfo = BuildRiotClientStartInfo(game);
+                if (riotStartInfo != null)
+                {
+                    Process.Start(riotStartInfo);
+                }
+            }
             else if (!string.IsNullOrWhiteSpace(game.ExecutablePath) && File.Exists(game.ExecutablePath))
             {
                 Process.Start(new ProcessStartInfo
@@ -183,14 +191,12 @@ public partial class App : Application
 
             Noxygen.Services.RecentGamesService.AddRecentGame(game.Title);
 
-            // Initialize Playtime Tracker & Start Timer
             var playtimeTracker = new PlaytimeTrackerService();
             var sessionStartTime = DateTime.Now;
 
             Process? launchedProcess = null;
-            string? targetExeName = !string.IsNullOrEmpty(game.ExecutablePath)
-                ? Path.GetFileNameWithoutExtension(game.ExecutablePath)
-                : null;
+            bool isRiotLaunch = IsRiotGame(game);
+            string? targetExeName = ResolveTrackedProcessName(game, isRiotLaunch);
 
             if (string.Equals(game.Launcher, "Steam", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(game.AppId))
             {
@@ -199,6 +205,13 @@ public partial class App : Application
             else if (string.Equals(game.Launcher, "Epic", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(game.AppId))
             {
                 await Windows.System.Launcher.LaunchUriAsync(new Uri($"com.epicgames.launcher://apps/{game.AppId}?action=launch"));
+            }
+            else if (isRiotLaunch)
+            {
+                var riotStartInfo = BuildRiotClientStartInfo(game);
+                if (riotStartInfo == null) return;
+
+                Process.Start(riotStartInfo);
             }
             else
             {
@@ -223,8 +236,7 @@ public partial class App : Application
                 }
             });
 
-            // Monitor process, log session on exit, and unhide when game closes
-            if (launchedProcess != null)
+            if (launchedProcess != null && !isRiotLaunch)
             {
                 launchedProcess.EnableRaisingEvents = true;
                 launchedProcess.Exited += async (s, args) =>
@@ -238,7 +250,7 @@ public partial class App : Application
             {
                 _ = Task.Run(async () =>
                 {
-                    await Task.Delay(4000);
+                    await Task.Delay(isRiotLaunch ? 8000 : 4000);
 
                     Process? gameProc = null;
                     while (true)
@@ -249,7 +261,7 @@ public partial class App : Application
                             gameProc = procs[0];
                             break;
                         }
-                        await Task.Delay(2000);
+                        await Task.Delay(2500);
                     }
 
                     var activeStartTime = DateTime.Now;
@@ -263,11 +275,107 @@ public partial class App : Application
                     RestoreWindow();
                 });
             }
+            else if (isRiotLaunch)
+            {
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(15000);
+                    RestoreWindow();
+                });
+            }
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[JumpList Launch Error]: {ex.Message}");
         }
+    }
+
+    private static string? ResolveTrackedProcessName(Game game, bool isRiotLaunch)
+    {
+        if (isRiotLaunch)
+        {
+            string combined = $"{game.Title} {game.ExecutablePath} {game.AppId}";
+            if (combined.Contains("valorant", StringComparison.OrdinalIgnoreCase))
+            {
+                return "VALORANT-Win64-Shipping";
+            }
+            if (combined.Contains("league", StringComparison.OrdinalIgnoreCase) ||
+                combined.Contains("lol", StringComparison.OrdinalIgnoreCase))
+            {
+                return "League of Legends";
+            }
+        }
+
+        return !string.IsNullOrEmpty(game.ExecutablePath)
+            ? Path.GetFileNameWithoutExtension(game.ExecutablePath)
+            : null;
+    }
+
+    private static bool IsRiotGame(Game game) =>
+        string.Equals(game.Launcher, "Riot", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(game.Launcher, "Riot Client", StringComparison.OrdinalIgnoreCase) ||
+        (!string.IsNullOrWhiteSpace(game.ExecutablePath) &&
+         game.ExecutablePath.Contains("Riot Games", StringComparison.OrdinalIgnoreCase) &&
+         !game.ExecutablePath.EndsWith("RiotClientServices.exe", StringComparison.OrdinalIgnoreCase));
+
+    private static ProcessStartInfo? BuildRiotClientStartInfo(Game game)
+    {
+        string? riotClientPath = null;
+
+        try
+        {
+            var launcherService = new LauncherDataService();
+            var launchers = launcherService.LoadLaunchersSync();
+            var riotLauncher = launchers?.FirstOrDefault(l =>
+                l != null &&
+                (l.Name?.Contains("Riot", StringComparison.OrdinalIgnoreCase) == true ||
+                 l.ExecutablePath?.Contains("RiotClient", StringComparison.OrdinalIgnoreCase) == true));
+
+            if (!string.IsNullOrWhiteSpace(riotLauncher?.ExecutablePath) && File.Exists(riotLauncher.ExecutablePath))
+            {
+                riotClientPath = riotLauncher.ExecutablePath;
+            }
+        }
+        catch
+        {
+            // Fall through to standard paths
+        }
+
+        if (string.IsNullOrWhiteSpace(riotClientPath))
+        {
+            string commonAppDataCandidate = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                "Riot Games", "RiotClientServices.exe");
+
+            if (File.Exists(commonAppDataCandidate))
+            {
+                riotClientPath = commonAppDataCandidate;
+            }
+            else if (File.Exists(@"C:\Riot Games\RiotClient\RiotClientServices.exe"))
+            {
+                riotClientPath = @"C:\Riot Games\RiotClient\RiotClientServices.exe";
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(riotClientPath) || !File.Exists(riotClientPath))
+        {
+            return null;
+        }
+
+        string combined = $"{game.Title} {game.ExecutablePath} {game.AppId}";
+        string product = combined.Contains("valorant", StringComparison.OrdinalIgnoreCase)
+            ? "valorant"
+            : combined.Contains("league", StringComparison.OrdinalIgnoreCase) ||
+              combined.Contains("lol", StringComparison.OrdinalIgnoreCase)
+                ? "league_of_legends"
+                : !string.IsNullOrWhiteSpace(game.AppId) ? game.AppId.Trim() : "valorant";
+
+        return new ProcessStartInfo
+        {
+            FileName = riotClientPath,
+            Arguments = $"--launch-product={product} --launch-patchline=live",
+            UseShellExecute = true
+        };
     }
 
     private void RestoreWindow()

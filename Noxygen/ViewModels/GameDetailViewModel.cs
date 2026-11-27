@@ -1,4 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Noxygen.Models;
 using Noxygen.Services;
 using System;
@@ -24,6 +26,9 @@ public partial class GameDetailViewModel : ObservableObject
 
     [ObservableProperty]
     private Game? _game;
+
+    [ObservableProperty]
+    private ImageSource? _coverArtSource;
 
     [ObservableProperty]
     private string _headerSubtitleText = "Not specified";
@@ -92,7 +97,7 @@ public partial class GameDetailViewModel : ObservableObject
     private bool _canToggleSessions;
 
     [ObservableProperty]
-    private string _sessionToggleText = "Show up to 10 sessions";
+    private string _sessionToggleText = "Show more (up to 10)";
 
     public ObservableCollection<GameDayBarItem> LastSevenDaysBars { get; } = new();
     public ObservableCollection<GameSessionDetailItem> VisibleSessions { get; } = new();
@@ -131,6 +136,8 @@ public partial class GameDetailViewModel : ObservableObject
         Game = game ?? throw new ArgumentNullException(nameof(game));
         IsExpandedToTen = false;
 
+        CoverArtSource = CreateSafeImageSource(game.CoverArtUrl);
+
         DeveloperText = string.IsNullOrWhiteSpace(game.Company) ? "Not specified" : game.Company.Trim();
         GenreText = "Not specified";
         GameVersionText = game.InstalledSizeGb > 0 ? $"{game.InstalledSizeGb:0.##} GB" : "Not specified";
@@ -152,6 +159,31 @@ public partial class GameDetailViewModel : ObservableObject
         PopulateStatistics(gameSessions);
         PopulateLastSevenDaysChart(gameSessions);
         PopulateSessions(gameSessions);
+    }
+
+    private static ImageSource? CreateSafeImageSource(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return null;
+
+        try
+        {
+            if (Uri.TryCreate(url.Trim(), UriKind.RelativeOrAbsolute, out var uri))
+            {
+                return new BitmapImage(uri);
+            }
+
+            if (File.Exists(url.Trim()))
+            {
+                return new BitmapImage(new Uri(Path.GetFullPath(url.Trim())));
+            }
+        }
+        catch
+        {
+            // Ignore malformed image paths/URIs so missing metadata doesn't crash the page
+        }
+
+        return null;
     }
 
     private void PopulateStatistics(List<PlaytimeSession> sessions)
